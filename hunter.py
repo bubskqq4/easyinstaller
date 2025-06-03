@@ -13,9 +13,10 @@ import threading
 import queue
 import datetime
 import hashlib
-import getpass
 import ssl
 import urllib.parse
+import random
+import string
 from colorama import Fore, Style, init
 from concurrent.futures import ThreadPoolExecutor
 import xml.etree.ElementTree as ET
@@ -24,7 +25,9 @@ import psutil
 import netifaces
 import ipaddress
 import uuid
-import random
+from bs4 import BeautifulSoup
+from cryptography.fernet import Fernet
+import speedtest
 
 init()
 
@@ -32,57 +35,56 @@ init()
 CONFIG_DIR = "config"
 CONFIG_FILES = {
     "ports.json": {"common_ports": [21, 22, 23, 25, 53, 80, 443, 8080], "extended_ports": list(range(1, 1001))},
-    "settings.json": {"timeout": 0.5, "max_threads": 50, "log_file": "hutnter.log", "ddos_threshold": 100},
+    "settings.json": {"timeout": 0.5, "max_threads": 50, "log_file": "easyhex.log", "ddos_threshold": 100},
     "whitelist.json": {"allowed_ips": []},
-    "users.json": {"users": [{"id": str(uuid.uuid4()), "username": "Ethan", "password": hashlib.sha256("Admin".encode()).hexdigest(), "role": "admin"}]}
+    "users.json": {"users": [{"id": str(uuid.uuid4()), "username": "Ethan", "password": hashlib.sha256("Admin".encode()).hexdigest(), "role": "admin"}]},
+    "keys.json": {
+        "keys": [
+            {"id": str(uuid.uuid4()), "key": hashlib.sha256("xAI-ADMIN-NEON-2025".encode()).hexdigest(), "role": "admin"}
+        ]
+    }
 }
 
 if not os.path.exists(CONFIG_DIR):
     os.makedirs(CONFIG_DIR)
-    print(Fore.GREEN + "[+] Created config folder." + Style.RESET_ALL)
+    print(Fore.CYAN + "[+] Initialized config matrix." + Style.RESET_ALL)
 for file_name, file_content in CONFIG_FILES.items():
     file_path = os.path.join(CONFIG_DIR, file_name)
     if not os.path.exists(file_path):
         with open(file_path, "w") as f:
             json.dump(file_content, f, indent=4)
-        print(Fore.GREEN + f"[+] Created {file_name} in config folder." + Style.RESET_ALL)
+        print(Fore.CYAN + f"[+] Deployed {file_name} to matrix." + Style.RESET_ALL)
 
 # Load configuration
 with open(os.path.join(CONFIG_DIR, "ports.json"), "r") as f:
     PORTS_CONFIG = json.load(f)
 with open(os.path.join(CONFIG_DIR, "settings.json"), "r") as f:
     SETTINGS = json.load(f)
-with open(os.path.join(CONFIG_DIR, "users.json"), "r") as f:
-    USERS = json.load(f)
+with open(os.path.join(CONFIG_DIR, "keys.json"), "r") as f:
+    KEYS = json.load(f)
 with open(os.path.join(CONFIG_DIR, "whitelist.json"), "r") as f:
     WHITELIST = json.load(f)
 
 # -------------------- LEGAL NOTICE --------------------
 LEGAL = """
-================== LEGAL NOTICE ==================
-This tool (Hutnter) is for educational and ethical
-penetration testing only. Unauthorized use of this
-software against networks or systems you do not own
-or have explicit permission to test is ILLEGAL.
-
-The developer is not responsible for misuse or damage.
-Users must comply with all applicable laws and regulations.
-==================================================
+================== LEGAL MATRIX ==================
+EASYHEX is for ethical penetration testing only.
+Unauthorized access to networks or systems is ILLEGAL.
+Comply with all laws. Developer not liable for misuse.
+=================================================
 """
 
-# -------------------- HEADER --------------------
+# -------------------- CYBERPUNK BANNER --------------------
 def banner():
     os.system("cls" if platform.system() == "Windows" else "clear")
-    print(Fore.GREEN + r"""
-██╗  ██╗██╗   ██╗████████╗███╗   ██╗████████╗███████╗██████╗ 
-██║  ██║██║   ██║╚══██╔══╝████╗  ██║╚══██╔══╝██╔════╝██╔══██╗
-███████║██║   ██║   ██║   ██╔██╗ ██║   ██║   █████╗  ██████╔╝
-██╔══██║██║   ██║   ██║   ██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗
-██║  ██║╚██████╔╝   ██║   ██║ ╚████║   ██║   ███████╗██║  ██║
-╚═╝  ╚═╝ ╚═════╝    ╚═╝   ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
-""" + Style.RESET_ALL)
-    print(Fore.CYAN + "                HUTNTER | Your Network, Your Rules" + Style.RESET_ALL)
-    print(LEGAL)
+    print(Fore.MAGENTA + r"""
+       ╔═╗╔═╗╔═══╗╦╦═╗ ╦════╗
+       ║╩╠═╩╬══╦╦╗╠╩╩╩╠══╦╦╗
+       ║╔╬═╗╠══╩╬╚╩╔╗║╔═╩╬╚╦═╦╦╦╗
+       ╚╝╚═╩╩═══╩╩╩╩╩╩╩╚══╩╩═╩╩╩╩╩╩╩
+    """ + Style.RESET_ALL)
+    print(Fore.CYAN + "          EASYHEX | NEON MATRIX DOMINATOR" + Style.RESET_ALL)
+    print(Fore.GREEN + LEGAL + Style.RESET_ALL)
 
 # -------------------- LOGGING --------------------
 def log_event(message):
@@ -90,18 +92,38 @@ def log_event(message):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         f.write(f"[{timestamp}] {message}\n")
 
+# -------------------- PRODUCT KEY AUTHENTICATION --------------------
+def product_key_auth():
+    banner()
+    print(Fore.MAGENTA + "=== ACCESS THE NEON MATRIX ===" + Style.RESET_ALL)
+    while True:
+        key = input(Fore.CYAN + "[NEONKEY] Enter product key: " + Style.RESET_ALL).strip()
+        key_hash = hashlib.sha256(key.encode()).hexdigest()
+        with open(os.path.join(CONFIG_DIR, "keys.json"), "r") as f:
+            keys_data = json.load(f)
+        for stored_key in keys_data['keys']:
+            if stored_key['key'] == key_hash:
+                role = stored_key['role']
+                log_event(f"{role.capitalize()} key authenticated: {key[:8]}...")
+                return {"id": stored_key['id'], "key": key[:8] + "...", "role": role}
+        print(Fore.RED + "[-] Invalid NEONKEY. Retry." + Style.RESET_ALL)
+        log_event(f"Invalid key attempt: {key[:8]}...")
+        print(Fore.CYAN + "[!] Generate a key via option 75 or use admin key: xAI-ADMIN-NEON-2025" + Style.RESET_ALL)
+        input(Fore.CYAN + "[>] Press Enter to retry..." + Style.RESET_ALL)
+        banner()
+
 # -------------------- NETWORK TOOLS --------------------
 def ping_host():
-    target = input(Fore.YELLOW + "[?] Enter host/IP to ping: " + Style.RESET_ALL)
+    target = input(Fore.CYAN + "[>] Target host/IP: " + Style.RESET_ALL)
     response = os.system(f"ping -c 4 {target}" if platform.system() != "Windows" else f"ping {target}")
     result = "Host is up." if response == 0 else "Host is down or unreachable."
     print(Fore.GREEN + f"[+] {result}" + Style.RESET_ALL)
     log_event(f"Pinged {target}: {result}")
 
 def port_scan():
-    target = input(Fore.YELLOW + "[?] Enter target IP: " + Style.RESET_ALL)
+    target = input(Fore.CYAN + "[>] Target IP: " + Style.RESET_ALL)
     ports = PORTS_CONFIG["common_ports"]
-    print(Fore.CYAN + f"[~] Scanning {target}..." + Style.RESET_ALL)
+    print(Fore.MAGENTA + f"[*] Scanning {target} on common ports..." + Style.RESET_ALL)
     for port in ports:
         try:
             s = socket.socket()
@@ -109,15 +131,15 @@ def port_scan():
             s.connect((target, port))
             print(Fore.GREEN + f"[+] Port {port} is OPEN" + Style.RESET_ALL)
             s.close()
-            log_event(f"Port scan: {target}:{port} is OPEN")
+            log_event(f"Port scan: {target}}:{port} is OPEN")
         except:
             pass
 
 def extended_port_scan():
-    target = input(Fore.YELLOW + "[?] Enter target IP: " + Style.RESET_ALL)
+    target = input(Fore.CYAN + "[>] Target IP: " + Style.RESET_ALL)
     ports = PORTS_CONFIG["extended_ports"]
     open_ports = []
-    def scan_port(port):
+    def scan_port(port)):
         try:
             s = socket.socket()
             s.settimeout(SETTINGS["timeout"])
@@ -126,14 +148,15 @@ def extended_port_scan():
             s.close()
         except:
             pass
+    print(Fore.MAGENTA + "[*] Initiating extended scan on {target}..." + Style.RESET_ALL)
     with ThreadPoolExecutor(max_workers=SETTINGS["max_threads"]) as executor:
         executor.map(scan_port, ports)
     for port in open_ports:
-        print(Fore.GREEN + f"[+] Port {port} is OPEN" + Style.RESET_ALL)
+        print(Fore.GREEN + f"[+ Port {port}] is OPEN" + Style.RESET_ALL)
         log_event(f"Extended port scan: {target}:{port} is OPEN")
 
 def get_ip():
-    hostname = input(Fore.YELLOW + "[?] Enter domain: " + Style.RESET_ALL)
+    hostname = input(Fore.CYAN + "[>] Enter domain: " + Style.RESET_ALL)
     try:
         ip = socket.gethostbyname(hostname)
         print(Fore.GREEN + f"[+] IP of {hostname}: {ip}" + Style.RESET_ALL)
@@ -143,31 +166,31 @@ def get_ip():
         log_event(f"Failed to resolve {hostname}")
 
 def http_headers():
-    url = input(Fore.YELLOW + "[?] Enter full URL (http://...): " + Style.RESET_ALL)
+    url = input(Fore.CYAN + "[>] Enter full URL (http://...): " + Style.RESET_ALL)
     try:
         r = requests.get(url)
-        print(Fore.CYAN + "[~] HTTP Headers:" + Style.RESET_ALL)
+        print(Fore.MAGENTA + "[*] HTTP Headers:" + Style.RESET_ALL)
         for k, v in r.headers.items():
-            print(f"{k}: {v}")
+            print(Fore.GREEN + f"{k}: {v}" + Style.RESET_ALL)
         log_event(f"Retrieved HTTP headers for {url}")
     except Exception as e:
         print(Fore.RED + f"[-] Error: {e}" + Style.RESET_ALL)
         log_event(f"HTTP headers error for {url}: {e}")
 
 def reverse_ip():
-    domain = input(Fore.YELLOW + "[?] Enter domain for Reverse IP: " + Style.RESET_ALL)
+    domain = input(Fore.CYAN + "[>] Enter domain: " + Style.RESET_ALL)
     try:
         ip = socket.gethostbyname(domain)
-        print(Fore.GREEN + f"[+] IP: {ip}" + Style.RESET_ALL)
-        print(Fore.CYAN + "[~] Domains hosted on this IP (mock):" + Style.RESET_ALL)
-        print("example.com\nsub.example.com")
+        print(Fore.GREEN + f"[+] IP: {ip}]" + Style.RESET_ALL)
+        print(Fore.MAGENTA + "[*] Domains hosted (mock):" + Style.RESET_ALL)
+        print(Fore.GREEN + "example.com\nsub.example.com" + Style.RESET_ALL)
         log_event(f"Reverse IP lookup for {domain}: {ip}")
     except:
         print(Fore.RED + "[-] Reverse IP Lookup failed." + Style.RESET_ALL)
         log_event(f"Reverse IP lookup failed for {domain}")
 
 def dns_lookup():
-    domain = input(Fore.YELLOW + "[?] Enter domain for DNS Lookup: " + Style.RESET_ALL)
+    domain = input(Fore.CYAN + "[>] Enter domain: " + Style.RESET_ALL)
     try:
         result = socket.gethostbyname_ex(domain)
         print(Fore.GREEN + f"[+] DNS Info: {result}" + Style.RESET_ALL)
@@ -177,7 +200,7 @@ def dns_lookup():
         log_event(f"DNS lookup failed for {domain}")
 
 def traceroute():
-    target = input(Fore.YELLOW + "[?] Enter target for Traceroute: " + Style.RESET_ALL)
+    target = input(Fore.CYAN + "[>] Enter target: " + Style.RESET_ALL)
     try:
         if platform.system() == "Windows":
             os.system(f"tracert {target}")
@@ -189,19 +212,19 @@ def traceroute():
         log_event(f"Traceroute failed for {target}")
 
 def whois_lookup():
-    domain = input(Fore.YELLOW + "[?] Enter domain for WHOIS: " + Style.RESET_ALL)
+    domain = input(Fore.CYAN + "[>] Enter domain: " + Style.RESET_ALL)
     try:
         import whois
         data = whois.whois(domain)
-        print(Fore.CYAN + "[~] WHOIS Data:" + Style.RESET_ALL)
-        print(data)
+        print(Fore.MAGENTA + "[*] WHOIS Data:" + Style.RESET_ALL)
+        print(Fore.GREEN + str(data) + Style.RESET_ALL)
         log_event(f"WHOIS lookup for {domain}")
     except:
-        print(Fore.RED + "[-] Install `python-whois` module to use this feature." + Style.RESET_ALL)
+        print(Fore.RED + "[-] Install `python-whois` module." + Style.RESET_ALL)
         log_event(f"WHOIS lookup failed for {domain}: python-whois not installed")
 
 def packet_sniffer():
-    interface = input(Fore.YELLOW + "[?] Enter network interface (e.g., eth0): " + Style.RESET_ALL)
+    interface = input(Fore.CYAN + "[>] Enter interface (e.g., eth0): " + Style.RESET_ALL)
     try:
         import scapy.all as scapy
         def process_packet(packet):
@@ -212,7 +235,7 @@ def packet_sniffer():
                 log_event(f"Sniffed packet: {src} -> {dst}")
         scapy.sniff(iface=interface, prn=process_packet, count=10)
     except:
-        print(Fore.RED + "[-] Install `scapy` module to use this feature." + Style.RESET_ALL)
+        print(Fore.RED + "[-] Install `scapy` module." + Style.RESET_ALL)
         log_event("Packet sniffer failed: scapy not installed")
 
 def arp_spoof_detector():
@@ -220,15 +243,15 @@ def arp_spoof_detector():
         import scapy.all as scapy
         def detect_arp(packet):
             if packet.haslayer(scapy.ARP) and packet[scapy.ARP].op == 2:
-                print(Fore.RED + f"[!] Possible ARP spoofing: {packet[scapy.ARP].psrc} claims {packet[scapy.ARP].hwsrc}" + Style.RESET_ALL)
-                log_event(f"Detected possible ARP spoofing: {packet[scapy.ARP].psrc}")
+                print(Fore.RED + f"[!] ARP spoofing: {packet[scapy.ARP].psrc} claims {packet[scapy.ARP].hwsrc}" + Style.RESET_ALL)
+                log_event(f"Detected ARP spoofing: {packet[scapy.ARP].psrc}")
         scapy.sniff(filter="arp", prn=detect_arp, count=10)
     except:
-        print(Fore.RED + "[-] Install `scapy` module to use this feature." + Style.RESET_ALL)
+        print(Fore.RED + "[-] Install `scapy` module." + Style.RESET_ALL)
         log_event("ARP spoof detector failed: scapy not installed")
 
 def mac_address_lookup():
-    ip = input(Fore.YELLOW + "[?] Enter IP to find MAC address: " + Style.RESET_ALL)
+    ip = input(Fore.CYAN + "[>] Enter IP: " + Style.RESET_ALL)
     try:
         import scapy.all as scapy
         arp = scapy.ARP(pdst=ip)
@@ -239,11 +262,11 @@ def mac_address_lookup():
             print(Fore.GREEN + f"[+] IP: {ip}, MAC: {received.hwsrc}" + Style.RESET_ALL)
             log_event(f"MAC address lookup: {ip} -> {received.hwsrc}")
     except:
-        print(Fore.RED + "[-] Install `scapy` module to use this feature." + Style.RESET_ALL)
+        print(Fore.RED + "[-] Install `scapy` module." + Style.RESET_ALL)
         log_event(f"MAC address lookup failed for {ip}")
 
 def bandwidth_monitor():
-    print(Fore.CYAN + "[~] Monitoring bandwidth usage..." + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Monitoring bandwidth..." + Style.RESET_ALL)
     try:
         for _ in range(5):
             net_io = psutil.net_io_counters()
@@ -251,11 +274,11 @@ def bandwidth_monitor():
             log_event(f"Bandwidth: Sent {net_io.bytes_sent / 1024 / 1024:.2f} MB, Received {net_io.bytes_recv / 1024 / 1024:.2f} MB")
             time.sleep(1)
     except:
-        print(Fore.RED + "[-] Install `psutil` module to use this feature." + Style.RESET_ALL)
+        print(Fore.RED + "[-] Install `psutil` module." + Style.RESET_ALL)
         log_event("Bandwidth monitor failed: psutil not installed")
 
 def ssl_certificate_check():
-    url = input(Fore.YELLOW + "[?] Enter URL (https://...): " + Style.RESET_ALL)
+    url = input(Fore.CYAN + "[>] Enter URL (https://...): " + Style.RESET_ALL)
     try:
         hostname = urllib.parse.urlparse(url).hostname
         context = ssl.create_default_context()
@@ -269,7 +292,7 @@ def ssl_certificate_check():
         log_event(f"SSL certificate check failed for {url}: {e}")
 
 def dns_enumeration():
-    domain = input(Fore.YELLOW + "[?] Enter domain for DNS enumeration: " + Style.RESET_ALL)
+    domain = input(Fore.CYAN + "[>] Enter domain: " + Style.RESET_ALL)
     record_types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME"]
     for record in record_types:
         try:
@@ -282,7 +305,7 @@ def dns_enumeration():
 
 def network_interfaces():
     interfaces = netifaces.interfaces()
-    print(Fore.CYAN + "[~] Network Interfaces:" + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Network Interfaces:" + Style.RESET_ALL)
     for iface in interfaces:
         addrs = netifaces.ifaddresses(iface)
         if netifaces.AF_INET in addrs:
@@ -291,7 +314,7 @@ def network_interfaces():
                 log_event(f"Network interface: {iface} -> {addr['addr']}")
 
 def file_integrity_check():
-    file_path = input(Fore.YELLOW + "[?] Enter file path to check integrity: " + Style.RESET_ALL)
+    file_path = input(Fore.CYAN + "[>] Enter file path: " + Style.RESET_ALL)
     try:
         with open(file_path, "rb") as f:
             file_hash = hashlib.sha256(f.read()).hexdigest()
@@ -302,28 +325,28 @@ def file_integrity_check():
         log_event(f"File integrity check failed for {file_path}: {e}")
 
 def vulnerability_scan():
-    target = input(Fore.YELLOW + "[?] Enter target IP for vulnerability scan: " + Style.RESET_ALL)
-    print(Fore.CYAN + "[~] Performing basic vulnerability scan (mock)..." + Style.RESET_ALL)
+    target = input(Fore.CYAN + "[>] Enter target IP: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Scanning vulnerabilities (mock)..." + Style.RESET_ALL)
     vulnerabilities = ["Open port 23 (Telnet)", "Weak SSL version detected"]
     for vuln in vulnerabilities:
         print(Fore.RED + f"[!] {vuln}" + Style.RESET_ALL)
         log_event(f"Vulnerability scan: {target} -> {vuln}")
 
 def packet_injection_test():
-    print(Fore.YELLOW + "[?] Packet injection test (requires root/admin and scapy)." + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Packet injection test (root required)." + Style.RESET_ALL)
     try:
         import scapy.all as scapy
-        dest_ip = input(Fore.YELLOW + "[?] Enter destination IP: " + Style.RESET_ALL)
+        dest_ip = input(Fore.CYAN + "[>] Enter destination IP: " + Style.RESET_ALL)
         packet = scapy.IP(dst=dest_ip)/scapy.ICMP()
         scapy.send(packet, verbose=0)
-        print(Fore.GREEN + "[+] Packet sent successfully." + Style.RESET_ALL)
+        print(Fore.GREEN + "[+] Packet sent." + Style.RESET_ALL)
         log_event(f"Packet injection test sent to {dest_ip}")
     except:
-        print(Fore.RED + "[-] Install `scapy` module and run as root." + Style.RESET_ALL)
+        print(Fore.RED + "[-] Install `scapy` and run as root." + Style.RESET_ALL)
         log_event("Packet injection test failed")
 
 def password_strength_checker():
-    password = getpass.getpass(Fore.YELLOW + "[?] Enter password to check: " + Style.RESET_ALL)
+    password = getpass.getpass(Fore.CYAN + "[>] Enter password: " + Style.RESET_ALL)
     score = 0
     if len(password) >= 8:
         score += 1
@@ -340,24 +363,24 @@ def password_strength_checker():
     log_event(f"Password strength check: {strength}")
 
 def network_traffic_analysis():
-    print(Fore.CYAN + "[~] Analyzing network traffic (mock)..." + Style.RESET_ALL)
-    print(Fore.GREEN + "[+] Detected protocols: TCP, UDP, ICMP" + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Analyzing traffic (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Detected: TCP, UDP, ICMP" + Style.RESET_ALL)
     log_event("Network traffic analysis performed")
 
 def firewall_rule_check():
-    print(Fore.CYAN + "[~] Checking firewall rules (mock)..." + Style.RESET_ALL)
-    print(Fore.GREEN + "[+] Firewall rules: Allow TCP 80, 443; Block UDP 53" + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Checking firewall (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Rules: Allow TCP 80, 443; Block UDP 53" + Style.RESET_ALL)
     log_event("Firewall rule check performed")
 
 def os_fingerprinting():
-    target = input(Fore.YELLOW + "[?] Enter target IP for OS fingerprinting: " + Style.RESET_ALL)
-    print(Fore.CYAN + "[~] Performing OS fingerprinting (mock)..." + Style.RESET_ALL)
-    print(Fore.GREEN + f"[+] OS: Linux/Windows (mock detection)" + Style.RESET_ALL)
+    target = input(Fore.CYAN + "[>] Enter target IP: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Fingerprinting OS (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] OS: Linux/Windows (mock)" + Style.RESET_ALL)
     log_event(f"OS fingerprinting attempted on {target}")
 
 def banner_grabbing():
-    target = input(Fore.YELLOW + "[?] Enter target IP: " + Style.RESET_ALL)
-    port = int(input(Fore.YELLOW + "[?] Enter port: " + Style.RESET_ALL))
+    target = input(Fore.CYAN + "[>] Enter target IP: " + Style.RESET_ALL)
+    port = int(input(Fore.CYAN + "[>] Enter port: " + Style.RESET_ALL))
     try:
         s = socket.socket()
         s.settimeout(SETTINGS["timeout"])
@@ -372,8 +395,8 @@ def banner_grabbing():
         log_event(f"Banner grabbing failed for {target}:{port}")
 
 def subnet_calculator():
-    ip = input(Fore.YELLOW + "[?] Enter IP (e.g., 192.168.1.0): " + Style.RESET_ALL)
-    mask = int(input(Fore.YELLOW + "[?] Enter subnet mask bits (e.g., 24): " + Style.RESET_ALL))
+    ip = input(Fore.CYAN + "[>] Enter IP (e.g., 192.168.1.0): " + Style.RESET_ALL)
+    mask = int(input(Fore.CYAN + "[>] Enter mask bits (e.g., 24): " + Style.RESET_ALL))
     try:
         network = ipaddress.ip_network(f"{ip}/{mask}", strict=False)
         print(Fore.GREEN + f"[+] Network: {network.network_address}/{mask}" + Style.RESET_ALL)
@@ -384,7 +407,7 @@ def subnet_calculator():
         log_event(f"Subnet calculation failed for {ip}/{mask}")
 
 def geo_ip_lookup():
-    ip = input(Fore.YELLOW + "[?] Enter IP for GeoIP lookup: " + Style.RESET_ALL)
+    ip = input(Fore.CYAN + "[>] Enter IP: " + Style.RESET_ALL)
     try:
         response = requests.get(f"http://ip-api.com/json/{ip}")
         data = response.json()
@@ -395,11 +418,11 @@ def geo_ip_lookup():
             print(Fore.RED + "[-] GeoIP lookup failed." + Style.RESET_ALL)
             log_event(f"GeoIP lookup failed for {ip}")
     except:
-        print(Fore.RED + "[-] Error during GeoIP lookup." + Style.RESET_ALL)
+        print(Fore.RED + "[-] GeoIP lookup error." + Style.RESET_ALL)
         log_event(f"GeoIP lookup error for {ip}")
 
 def http_method_test():
-    url = input(Fore.YELLOW + "[?] Enter URL to test HTTP methods: " + Style.RESET_ALL)
+    url = input(Fore.CYAN + "[>] Enter URL: " + Style.RESET_ALL)
     methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     for method in methods:
         try:
@@ -411,7 +434,7 @@ def http_method_test():
             log_event(f"HTTP method test failed: {method} on {url}")
 
 def dns_zone_transfer():
-    domain = input(Fore.YELLOW + "[?] Enter domain for zone transfer: " + Style.RESET_ALL)
+    domain = input(Fore.CYAN + "[>] Enter domain: " + Style.RESET_ALL)
     try:
         answers = dns.resolver.resolve(domain, "NS")
         for ns in answers:
@@ -420,7 +443,7 @@ def dns_zone_transfer():
                 zone = dns.zone.from_xfr(dns.query.xfr(ns, domain))
                 print(Fore.GREEN + f"[+] Zone transfer from {ns}:" + Style.RESET_ALL)
                 for name, rdata in zone.iterate_rdatas():
-                    print(f"{name}: {rdata}")
+                    print(Fore.GREEN + f"{name}: {rdata}" + Style.RESET_ALL)
                 log_event(f"DNS zone transfer from {ns} for {domain}")
             except:
                 print(Fore.RED + f"[-] Zone transfer failed for {ns}" + Style.RESET_ALL)
@@ -430,7 +453,7 @@ def dns_zone_transfer():
         log_event(f"DNS zone transfer failed for {domain}")
 
 def network_latency_test():
-    target = input(Fore.YELLOW + "[?] Enter target IP/hostname: " + Style.RESET_ALL)
+    target = input(Fore.CYAN + "[>] Enter target IP/hostname: " + Style.RESET_ALL)
     try:
         start = time.time()
         socket.create_connection((target, 80), timeout=SETTINGS["timeout"])
@@ -442,7 +465,7 @@ def network_latency_test():
         log_event(f"Network latency test failed for {target}")
 
 def protocol_analyzer():
-    print(Fore.CYAN + "[~] Analyzing protocols (mock)..." + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Analyzing protocols (mock)..." + Style.RESET_ALL)
     print(Fore.GREEN + "[+] Detected: HTTP, HTTPS, FTP, SSH" + Style.RESET_ALL)
     log_event("Protocol analysis performed")
 
@@ -451,7 +474,7 @@ def log_file_analyzer():
     try:
         with open(log_file, "r") as f:
             lines = f.readlines()
-        print(Fore.CYAN + "[~] Recent log entries:" + Style.RESET_ALL)
+        print(Fore.MAGENTA + "[*] Recent log entries:" + Style.RESET_ALL)
         for line in lines[-5:]:
             print(Fore.GREEN + f"[+] {line.strip()}" + Style.RESET_ALL)
         log_event("Log file analysis performed")
@@ -459,97 +482,332 @@ def log_file_analyzer():
         print(Fore.RED + "[-] Log file not found." + Style.RESET_ALL)
         log_event("Log file analysis failed")
 
+def web_crawler():
+    url = input(Fore.CYAN + "[>] Enter URL: " + Style.RESET_ALL)
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        links = [a.get('href') for a in soup.find_all('a', href=True)]
+        print(Fore.MAGENTA + "[*] Crawled Links:" + Style.RESET_ALL)
+        for link in links[:10]:
+            print(Fore.GREEN + f"[+] {link}" + Style.RESET_ALL)
+        log_event(f"Web crawl performed on {url}")
+    except Exception as e:
+        print(Fore.RED + f"[-] Error: {e}" + Style.RESET_ALL)
+        log_event(f"Web crawl failed for {url}: {e}")
+
+def sql_injection_tester():
+    url = input(Fore.CYAN + "[>] Enter URL (e.g., http://example.com?id=1): " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Testing SQL injection (mock, ethical)..." + Style.RESET_ALL)
+    payloads = ["' OR '1'='1", "'--"]
+    for payload in payloads:
+        test_url = f"{url}{payload}"
+        try:
+            r = requests.get(test_url)
+            if "sql" in r.text.lower():
+                print(Fore.RED + f"[!] Potential SQLi: {test_url}" + Style.RESET_ALL)
+            else:
+                print(Fore.GREEN + f"[+] Safe: {test_url}" + Style.RESET_ALL)
+            log_event(f"SQLi test on {test_url}")
+        except:
+            print(Fore.RED + f"[-] Failed: {test_url}" + Style.RESET_ALL)
+            log_event(f"SQLi test failed for {test_url}")
+
+def wifi_scanner():
+    print(Fore.MAGENTA + "[*] Scanning Wi-Fi networks..." + Style.RESET_ALL)
+    try:
+        import wifi
+        networks = wifi.Cell.all('wlan0')
+        for network in networks[:5]:
+            print(Fore.GREEN + f"[+] SSID: {network.ssid}, Signal: {network.signal}" + Style.RESET_ALL)
+            log_event(f"Wi-Fi scan: {network.ssid}")
+    except:
+        print(Fore.RED + "[-] Install `wifi` module and run as root." + Style.RESET_ALL)
+        log_event("Wi-Fi scan failed: wifi module not installed")
+
+def packet_crafter():
+    print(Fore.MAGENTA + "[*] Crafting packet (root required)..." + Style.RESET_ALL)
+    try:
+        import scapy.all as scapy
+        dest_ip = input(Fore.CYAN + "[>] Destination IP: " + Style.RESET_ALL)
+        payload = input(Fore.CYAN + "[>] Payload: " + Style.RESET_ALL)
+        packet = scapy.IP(dst=dest_ip)/scapy.TCP(dport=80)/scapy.Raw(load=payload)
+        scapy.send(packet, verbose=0)
+        print(Fore.GREEN + "[+] Packet sent." + Style.RESET_ALL)
+        log_event(f"Packet crafted and sent to {dest_ip}")
+    except:
+        print(Fore.RED + "[-] Install `scapy` and run as root." + Style.RESET_ALL)
+        log_event("Packet crafting failed")
+
+def network_topology_mapper():
+    print(Fore.MAGENTA + "[*] Mapping topology (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Devices: Router (192.168.1.1), Host (192.168.1.100)" + Style.RESET_ALL)
+    log_event("Network topology mapping performed")
+
+def brute_force_tester():
+    url = input(Fore.CYAN + "[>] Enter login URL: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Testing brute force (mock, ethical)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Result: Login page rate-limits after 5 attempts." + Style.RESET_ALL)
+    log_event(f"Brute force test on {url}")
+
+def firewall_bypass_test():
+    target = input(Fore.CYAN + "[>] Enter target IP: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Testing firewall bypass (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Open ports detected: 80, 443" + Style.RESET_ALL)
+    log_event(f"Firewall bypass test on {target}")
+
+# -------------------- NEW NETWORK TOOLS --------------------
+def advanced_packet_analyzer():
+    interface = input(Fore.CYAN + "[>] Enter interface (e.g., eth0): " + Style.RESET_ALL)
+    try:
+        import scapy.all as scapy
+        def analyze_packet(packet):
+            if packet.haslayer(scapy.IP):
+                src = packet[scapy.IP].src
+                dst = packet[scapy.IP].dst
+                proto = packet[scapy.IP].proto
+                print(Fore.GREEN + f"[+] Packet: {src} -> {dst}, Protocol: {proto}" + Style.RESET_ALL)
+                log_event(f"Analyzed packet: {src} -> {dst}, Proto: {proto}")
+        scapy.sniff(iface=interface, prn=analyze_packet, count=10)
+    except:
+        print(Fore.RED + "[-] Install `scapy` module." + Style.RESET_ALL)
+        log_event("Advanced packet analyzer failed: scapy not installed")
+
+def vpn_detection():
+    target = input(Fore.CYAN + "[>] Enter target IP: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Detecting VPN (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] VPN detected: OpenVPN protocol" + Style.RESET_ALL)
+    log_event(f"VPN detection on {target}")
+
+def cloud_service_enumeration():
+    target = input(Fore.CYAN + "[>] Enter target IP/domain: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Enumerating cloud services (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Detected: AWS S3, Azure Blob Storage" + Style.RESET_ALL)
+    log_event(f"Cloud service enumeration on {target}")
+
+def port_knocking_simulator():
+    target = input(Fore.CYAN + "[>] Enter target IP: " + Style.RESET_ALL)
+    ports = input(Fore.CYAN + "[>] Enter port sequence (e.g., 1000,2000,3000): " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Simulating port knocking..." + Style.RESET_ALL)
+    for port in ports.split(','):
+        try:
+            s = socket.socket()
+            s.settimeout(SETTINGS["timeout"])
+            s.connect((target, int(port)))
+            s.close()
+            print(Fore.GREEN + f"[+] Knocked port {port}" + Style.RESET_ALL)
+            log_event(f"Port knock: {target}:{port}")
+        except:
+            print(Fore.RED + f"[-] Failed port {port}" + Style.RESET_ALL)
+            log_event(f"Port knock failed: {target}:{port}")
+
+def network_intrusion_detection():
+    print(Fore.MAGENTA + "[*] Monitoring for intrusions (mock)..." + Style.RESET_ALL)
+    print(Fore.RED + "[!] Suspicious traffic: Port scan detected" + Style.RESET_ALL)
+    log_event("Network intrusion detection performed")
+
+def ip_spoofing_test():
+    print(Fore.MAGENTA + "[*] Testing IP spoofing (root required)..." + Style.RESET_ALL)
+    try:
+        import scapy.all as scapy
+        src_ip = input(Fore.CYAN + "[>] Source IP (spoofed): " + Style.RESET_ALL)
+        dest_ip = input(Fore.CYAN + "[>] Destination IP: " + Style.RESET_ALL)
+        packet = scapy.IP(src=src_ip, dst=dest_ip)/scapy.ICMP()
+        scapy.send(packet, verbose=0)
+        print(Fore.GREEN + "[+] Spoofed packet sent." + Style.RESET_ALL)
+        log_event(f"IP spoofing test: {src_ip} -> {dest_ip}")
+    except:
+        print(Fore.RED + "[-] Install `scapy` and run as root." + Style.RESET_ALL)
+        log_event("IP spoofing test failed")
+
+def ssl_tls_version_scanner():
+    url = input(Fore.CYAN + "[>] Enter URL (https://...): " + Style.RESET_ALL)
+    try:
+        hostname = urllib.parse.urlparse(url).hostname
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        with socket.create_connection((hostname, 443)) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                print(Fore.GREEN + f"[+] TLS Version: {ssock.version()}" + Style.RESET_ALL)
+                log_event(f"SSL/TLS scan for {url}: {ssock.version()}")
+    except Exception as e:
+        print(Fore.RED + f"[-] Error: {e}" + Style.RESET_ALL)
+        log_event(f"SSL/TLS scan failed for {url}: {e}")
+
+def dns_cache_poisoning_test():
+    domain = input(Fore.CYAN + "[>] Enter domain: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Testing DNS cache poisoning (mock, ethical)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Result: DNS server not vulnerable" + Style.RESET_ALL)
+    log_event(f"DNS cache poisoning test on {domain}")
+
+def network_congestion_analyzer():
+    target = input(Fore.CYAN + "[>] Enter target IP: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Analyzing congestion (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Congestion: Moderate, 50ms delay" + Style.RESET_ALL)
+    log_event(f"Network congestion analysis on {target}")
+
+def iot_device_scanner():
+    print(Fore.MAGENTA + "[*] Scanning IoT devices (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Devices: Smart Camera (192.168.1.50), Thermostat (192.168.1.51)" + Style.RESET_ALL)
+    log_event("IoT device scan performed")
+
 # -------------------- ETHICAL TOOLS --------------------
 def ethical_dilemma_analyzer():
-    print(Fore.CYAN + "[~] Ethical Dilemma Analyzer" + Style.RESET_ALL)
-    action = input(Fore.YELLOW + "[?] Describe the network action (e.g., port scanning, packet sniffing): " + Style.RESET_ALL)
-    target = input(Fore.YELLOW + "[?] Target (e.g., IP, domain): " + Style.RESET_ALL)
-    permission = input(Fore.YELLOW + "[?] Do you have explicit permission? (yes/no): " + Style.RESET_ALL).lower()
-    result = "Ethical" if permission == "yes" else "Unethical: Requires explicit permission"
+    print(Fore.MAGENTA + "[*] Ethical Dilemma Analyzer" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "[>] Network action: " + Style.RESET_ALL)
+    target = input(Fore.CYAN + "[>] Target (IP/domain): " + Style.RESET_ALL)
+    permission = input(Fore.CYAN + "[>] Explicit permission? (yes/no): " + Style.RESET_ALL).lower()
+    result = "Ethical" if permission == "yes" else "Unethical: Requires permission"
     print(Fore.GREEN + f"[+] Analysis: {result}" + Style.RESET_ALL)
     log_event(f"Ethical dilemma analysis: {action} on {target} -> {result}")
 
 def decision_making_framework():
-    print(Fore.CYAN + "[~] Decision-Making Framework" + Style.RESET_ALL)
-    action = input(Fore.YELLOW + "[?] Action to evaluate: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Decision-Making Framework" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "[>] Action to evaluate: " + Style.RESET_ALL)
     criteria = ["Legality", "Consent", "Impact", "Necessity"]
     scores = {}
     for criterion in criteria:
-        score = int(input(Fore.YELLOW + f"[?] Score for {criterion} (1-5): " + Style.RESET_ALL))
+        score = int(input(Fore.CYAN + f"[>] Score for {criterion} (1-5): " + Style.RESET_ALL))
         scores[criterion] = score
     avg_score = sum(scores.values()) / len(scores)
     result = "Proceed" if avg_score >= 3 else "Reconsider"
-    print(Fore.GREEN + f"[+] Decision: {result} (Average Score: {avg_score:.2f})" + Style.RESET_ALL)
+    print(Fore.GREEN + f"[+] Decision: {result} (Score: {avg_score:.2f})" + Style.RESET_ALL)
     log_event(f"Decision-making framework: {action} -> {result}")
 
 def principles_manager():
-    print(Fore.CYAN + "[~] Ethical Principles Manager" + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Ethical Principles Manager" + Style.RESET_ALL)
     principles = ["Respect for autonomy", "Non-maleficence", "Beneficence", "Justice"]
-    print(Fore.GREEN + "[+] Current principles: " + ", ".join(principles) + Style.RESET_ALL)
-    new_principle = input(Fore.YELLOW + "[?] Add a new principle (or press Enter to skip): " + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Principles: " + ", ".join(principles) + Style.RESET_ALL)
+    new_principle = input(Fore.CYAN + "[>] Add principle (Enter to skip): " + Style.RESET_ALL)
     if new_principle:
         principles.append(new_principle)
         print(Fore.GREEN + f"[+] Added: {new_principle}" + Style.RESET_ALL)
         log_event(f"Added ethical principle: {new_principle}")
 
 def compliance_checker():
-    print(Fore.CYAN + "[~] Compliance Checker" + Style.RESET_ALL)
-    action = input(Fore.YELLOW + "[?] Action to check (e.g., port scanning): " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Compliance Checker" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "[>] Action to check: " + Style.RESET_ALL)
     standards = ["GDPR", "HIPAA", "PCI-DSS"]
     results = []
     for standard in standards:
-        compliant = input(Fore.YELLOW + f"[?] Compliant with {standard}? (yes/no): " + Style.RESET_ALL).lower()
+        compliant = input(Fore.CYAN + f"[>] Compliant with {standard}? (yes/no): " + Style.RESET_ALL).lower()
         results.append(f"{standard}: {'Compliant' if compliant == 'yes' else 'Non-compliant'}")
-    print(Fore.GREEN + "[+] Compliance Results: " + "; ".join(results) + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Results: " + "; ".join(results) + Style.RESET_ALL)
     log_event(f"Compliance check for {action}: {'; '.join(results)}")
 
 def scenario_generator():
-    print(Fore.CYAN + "[~] Ethical Scenario Generator" + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Ethical Scenario Generator" + Style.RESET_ALL)
     scenarios = [
         "Unauthorized port scan on a corporate network",
         "Packet sniffing on a public Wi-Fi",
-        "Attempting to bypass authentication on a test server"
+        "Bypassing authentication on a test server"
     ]
     scenario = random.choice(scenarios)
     print(Fore.GREEN + f"[+] Scenario: {scenario}" + Style.RESET_ALL)
     log_event(f"Generated scenario: {scenario}")
 
 def decision_tree_builder():
-    print(Fore.CYAN + "[~] Decision Tree Builder" + Style.RESET_ALL)
-    action = input(Fore.YELLOW + "[?] Action to analyze: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Decision Tree Builder" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "[>] Action to analyze: " + Style.RESET_ALL)
     tree = {"Action": action, "Steps": []}
     while True:
-        step = input(Fore.YELLOW + "[?] Add decision step (or press Enter to finish): " + Style.RESET_ALL)
+        step = input(Fore.CYAN + "[>] Add step (Enter to finish): " + Style.RESET_ALL)
         if not step:
             break
         tree["Steps"].append(step)
-    print(Fore.GREEN + f"[+] Decision Tree: {json.dumps(tree, indent=2)}" + Style.RESET_ALL)
+    print(Fore.GREEN + f"[+] Tree: {json.dumps(tree, indent=2)}" + Style.RESET_ALL)
     log_event(f"Built decision tree for {action}")
+
+def risk_assessment():
+    print(Fore.MAGENTA + "[*] Risk Assessment" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "[>] Action to assess: " + Style.RESET_ALL)
+    risks = ["Data breach", "Legal violation", "Reputation damage"]
+    scores = {}
+    for risk in risks:
+        score = int(input(Fore.CYAN + f"[>] Risk level for {risk} (1-5): " + Style.RESET_ALL))
+        scores[risk] = score
+    avg_score = sum(scores.values()) / len(scores)
+    result = "Low risk" if avg_score < 3 else "High risk"
+    print(Fore.GREEN + f"[+] Risk: {result} (Score: {avg_score:.2f})" + Style.RESET_ALL)
+    log_event(f"Risk assessment for {action}: {result}")
+
+def ethics_report_generator():
+    print(Fore.MAGENTA + "[*] Ethics Report Generator" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "[>] Action analyzed: " + Style.RESET_ALL)
+    report = f"Ethics Report\nAction: {action}\nEthical: Requires permission\nRecommendation: Obtain consent"
+    print(Fore.GREEN + f"[+] {report}" + Style.RESET_ALL)
+    log_event(f"Generated ethics report for {action}")
+
+def stakeholder_analysis():
+    print(Fore.MAGENTA + "[*] Stakeholder Analysis" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "[>] Action to analyze: " + Style.RESET_ALL)
+    stakeholders = ["Users", "Admins", "Clients"]
+    impacts = {}
+    for stakeholder in stakeholders:
+        impact = input(Fore.CYAN + f"[>] Impact on {stakeholder}: " + Style.RESET_ALL)
+        impacts[stakeholder] = impact
+    print(Fore.GREEN + f"[+] Impacts: {json.dumps(impacts, indent=2)}" + Style.RESET_ALL)
+    log_event(f"Stakeholder analysis for {action}")
+
+def privacy_impact_assessment():
+    print(Fore.MAGENTA + "[*] Privacy Impact Assessment" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "[>] Action to assess: " + Style.RESET_ALL)
+    data_types = ["Personal", "Financial", "Health"]
+    risks = {}
+    for data in data_types:
+        risk = input(Fore.CYAN + f"[>] Privacy risk for {data} data (low/medium/high): " + Style.RESET_ALL)
+        risks[data] = risk
+    print(Fore.GREEN + f"[+] Risks: {json.dumps(risks, indent=2)}" + Style.RESET_ALL)
+    log_event(f"Privacy impact assessment for {action}")
+
+def ethical_ai_analysis():
+    print(Fore.MAGENTA + "[*] Ethical AI Analysis" + Style.RESET_ALL)
+    tool = input(Fore.CYAN + "[>] AI tool to analyze: " + Style.RESET_ALL)
+    concerns = ["Bias", "Transparency", "Accountability"]
+    results = {}
+    for concern in concerns:
+        level = input(Fore.CYAN + f"[>] Concern level for {concern} (low/medium/high): " + Style.RESET_ALL)
+        results[concern] = level
+    print(Fore.GREEN + f"[+] Results: {json.dumps(results, indent=2)}" + Style.RESET_ALL)
+    log_event(f"Ethical AI analysis for {tool}")
+
+def social_engineering_simulator():
+    print(Fore.MAGENTA + "[*] Social Engineering Simulator (ethical)" + Style.RESET_ALL)
+    scenario = random.choice(["Phishing email", "Phone scam", "USB drop"])
+    print(Fore.GREEN + f"[+] Scenario: {scenario}" + Style.RESET_ALL)
+    log_event(f"Social engineering scenario: {scenario}")
+
+def bias_detection_framework():
+    print(Fore.MAGENTA + "[*] Bias Detection Framework" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "[>] Action to analyze: " + Style.RESET_ALL)
+    biases = ["Selection bias", "Confirmation bias", "Automation bias"]
+    detected = random.choice(biases)
+    print(Fore.RED + f"[!] Detected: {detected}" + Style.RESET_ALL)
+    log_event(f"Bias detection for {action}: {detected}")
+
+def ethical_audit_trail():
+    print(Fore.MAGENTA + "[*] Ethical Audit Trail" + Style.RESET_ALL)
+    try:
+        with open(os.path.join(CONFIG_DIR, SETTINGS["log_file"]), "r") as f:
+            logs = [line for line in f if "ethical" in line.lower()]
+        print(Fore.GREEN + "[+] Ethical actions:" + Style.RESET_ALL)
+        for log in logs[-5:]:
+            print(Fore.GREEN + f"{log.strip()}" + Style.RESET_ALL)
+        log_event("Ethical audit trail reviewed")
+    except:
+        print(Fore.RED + "[-] Audit trail failed." + Style.RESET_ALL)
+        log_event("Ethical audit trail failed")
 
 # -------------------- UTILITY TOOLS --------------------
 def user_signup():
-    print(Fore.CYAN + "[~] User Sign-Up" + Style.RESET_ALL)
-    username = input(Fore.YELLOW + "[?] Enter username: " + Style.RESET_ALL)
-    password = getpass.getpass(Fore.YELLOW + "[?] Enter password: " + Style.RESET_ALL)
-    with open(os.path.join(CONFIG_DIR, "users.json"), "r") as f:
-        users_data = json.load(f)
-    if any(user['username'] == username for user in users_data['users']):
-        print(Fore.RED + "[-] Username already exists." + Style.RESET_ALL)
-        log_event(f"User sign-up failed: {username} already exists")
-    else:
-        user_id = str(uuid.uuid4())
-        users_data['users'].append({"id": user_id, "username": username, "password": hashlib.sha256(password.encode()).hexdigest(), "role": "user"})
-        with open(os.path.join(CONFIG_DIR, "users.json"), "w") as f:
-            json.dump(users_data, f, indent=4)
-        print(Fore.GREEN + "[+] User signed up successfully." + Style.RESET_ALL)
-        log_event(f"User signed up: {username}")
+    print(Fore.RED + "[!] Use option 64 to generate a new product key instead." + Style.RESET_ALL)
+    log_event("User sign-up redirected to product key generation")
 
 def automated_backup():
-    print(Fore.CYAN + "[~] Performing automated backup..." + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Initiating backup..." + Style.RESET_ALL)
     backup_dir = os.path.join(CONFIG_DIR, "backups")
     if not os.path.exists(backup_dir):
         os.makedirs(backup_dir)
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
     for file_name in CONFIG_FILES.keys():
         src = os.path.join(CONFIG_DIR, file_name)
         dst = os.path.join(backup_dir, f"{file_name}.{timestamp}.bak")
@@ -561,147 +819,289 @@ def automated_backup():
         log_event(f"Backed up {file_name} to {dst}")
 
 def multi_language_support():
-    print(Fore.CYAN + "[~] Multi-Language Support" + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Multi-Language Interface" + Style.RESET_ALL)
     languages = {"en": "English", "es": "Spanish", "fr": "French"}
-    lang = input(Fore.YELLOW + f"[?] Select language ({', '.join(languages.values())}): " + Style.RESET_ALL).lower()
+    lang = input(Fore.CYAN + f"[>] Select language ({', '.join(languages.values())}): " + Style.RESET_ALL).lower()
     lang_code = next((code for code, name in languages.items() if name.lower() == lang), "en")
     try:
         from translate import Translator
-        translator = Translator(to_lang=lang_code)
+        translator = Translator(to_lang(lang_code)
         message = translator.translate("Network scan completed")
         print(Fore.GREEN + f"[+] Translated: {message}" + Style.RESET_ALL)
         log_event(f"Translated message to {lang_code}")
-    except:
-        print(Fore.RED + "[-] Install `python-translate` module to use this feature." + Style.RESET_ALL)
+    except ImportError:
+        print(Fore.RED + "[-] Install `python-translate` module." + Style.RESET_ALL)
         log_event("Multi-language support failed: python-translate not installed")
 
 def report_generator():
-    print(Fore.CYAN + "[~] Report Generator" + Style.RESET_ALL)
-    report_type = input(Fore.YELLOW + "[?] Report type (summary/detailed): " + Style.RESET_ALL).lower()
+    print(Fore.MAGENTA + "[*] Generating Report" + Style.RESET_ALL)
+    report_type = input(Fore.CYAN + "[>] Type (summary/detailed): " + Style.RESET_ALL).lower()
     try:
         with open(os.path.join(CONFIG_DIR, SETTINGS["log_file"]), "r") as f:
             logs = f.readlines()
-        report_file = os.path.join(CONFIG_DIR, f"report_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+        report_file = os.path.join(CONFIG_DIR, f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
         with open(report_file, "w") as f:
-            f.write("Hutnter Report\n")
-            f.write(f"Generated: {datetime.datetime.now()}\n")
+            f.write("EASYHEX Report\n")
+            f.write(f"Generated: {datetime.now()}\n")
             f.write(f"Type: {report_type}\n\n")
             if report_type == "summary":
                 f.write(f"Total Logs: {len(logs)}\n")
             else:
                 for log in logs:
                     f.write(log)
-        print(Fore.GREEN + f"[+] Report saved to {report_file}" + Style.RESET_ALL)
+        print(Fore.GREEN + f"[+] Report saved: {report_file}" + Style.RESET_ALL)
         log_event(f"Generated {report_type} report: {report_file}")
     except:
         print(Fore.RED + "[-] Report generation failed." + Style.RESET_ALL)
         log_event("Report generation failed")
 
+def file_encryptor():
+    file_path = input(Fore.CYAN + "[>] Enter file path to encrypt: " + Style.RESET_ALL)
+    try:
+        key = Fernet.generate_key()
+        fernet = Fernet(key)
+        with open(file_path, "rb") as f:
+            data = f.read()
+        encrypted = fernet.encrypt(data)
+        with open(file_path + ".enc", "wb") as f:
+            f.write(encrypted)
+        with open(file_path + ".key", "wb") as f:
+            f.write(key)
+        print(Fore.GREEN + f"[+] Encrypted: {file_path}.enc, Key: {file_path}.key" + Style.RESET_ALL)
+        log_event(f"Encrypted file: {file_path}")
+    except Exception as e:
+        print(Fore.RED + f"[-] Error: {e}" + Style.RESET_ALL)
+        log_event(f"File encryption failed for {file_path}: {e}")
+
+def system_monitor():
+    print(Fore.MAGENTA + "[*] System Monitor" + Style.RESET_ALL)
+    try:
+        for _ in range(5):
+            cpu = psutil.cpu_percent()
+            mem = psutil.virtual_memory().percent
+            disk = psutil.disk_usage('/').percent
+            print(Fore.GREEN + f"[+] CPU: {cpu}%, Memory: {mem}%, Disk: {disk}%" + Style.RESET_ALL)
+            log_event(f"System monitor: CPU {cpu}%, Memory {mem}%, Disk {disk}%")
+            time.sleep(1)
+    except:
+        print(Fore.RED + "[-] Install `psutil` module." + Style.RESET_ALL)
+        log_event("System monitor failed: psutil not installed")
+
+def api_scanner():
+    url = input(Fore.CYAN + "[>] Enter API URL: " + Style.RESET_ALL)
+    print(Fore.MAGENTA + "[*] Scanning API (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Endpoints: /api/v1/users, /api/v1/data" + Style.RESET_ALL)
+    log_event(f"API scan on {url}")
+
+def password_generator():
+    length = int(input(Fore.CYAN + "[>] Password length: " + Style.RESET_ALL))
+    chars = string.ascii_letters + string.digits + string.punctuation
+    password = ''.join(random.choice(chars) for _ in range(length))
+    print(Fore.GREEN + f"[+] Password: {password}" + Style.RESET_ALL)
+    log_event("Generated random password")
+
+def log_cleaner():
+    log_file = os.path.join(CONFIG_DIR, SETTINGS["log_file"])
+    days = int(input(Fore.CYAN + "[>] Clear logs older than (days): " + Style.RESET_ALL))
+    try:
+        cutoff = datetime.datetime.now() - datetime.timedelta(days=days)
+        with open(log_file, "r") as f:
+            lines = f.readlines()
+        with open(log_file, "w") as f:
+            for line in lines:
+                timestamp = datetime.datetime.strptime(line[1:20], "%Y-%m-%d %H:%M:%S")
+                if timestamp >= cutoff:
+                    f.write(line)
+        print(Fore.GREEN + "[+] Logs cleaned." + Style.RESET_ALL)
+        log_event(f"Cleared logs older than {days} days")
+    except Exception as e:
+        print(Fore.RED + f"[-] Failed: {e}" + Style.RESET_ALL)
+        log_event(f"Log cleaning failed: {e}")
+
+def file_decrypt():
+    file_path = input(Fore.CYAN + "[>] Enter encrypted file path: " + Style.RESET_ALL)
+    key_file = input(Fore.CYAN + "[>] Enter key file path: " + Style.RESET_ALL)
+    try:
+        with open(key_file, "rb") as f:
+            key = f.read()
+        fernet = Fernet(key)
+        with open(file_path, "rb") as f:
+            encrypted = f.read()
+        decrypted = fernet.decrypt(encrypted)
+        output_file = file_path.replace(".enc", "_decrypted")
+        with open(output_file, "wb") as f:
+            f.write(decrypted)
+        print(Fore.GREEN + f"[+] Decrypted: {output_file}" + Style.RESET_ALL)
+        log_event(f"Decrypted file: {file_path}")
+    except Exception as e:
+        print(Fore.RED + f"[-] Error: {e}" + Style.RESET_ALL)
+        log_event(f"File decryption failed: {file_path}")
+
+def network_speed_test():
+    print(Fore.MAGENTA + "[*] Testing network speed..." + Style.RESET_ALL)
+    try:
+        st = speedtest.Speedtest()
+        st.download()
+        st.upload()
+        results = st.results.dict()
+        print(Fore.GREEN + f"[+] Download: {results['download'] / 1000000:.2f} Mbps, Upload: {results['upload'] / 1000000:.2f} Mbps" + Style.RESET_ALL)
+        log_event(f"Network speed: {results['download'] / 1000000:.2f} Mbps. down: Upload, Mbps: {results['upload'] / 1000000:.2f}")
+    except:
+        print(Fore.RED + "[-] Install `speedtest-cli` module." + Style.RESET_ALL)
+        log_event("Network speed test failed: speedtest-cli not installed")
+
+def dark_pool():
+    print(Fore.MAGENTA + "[*] Scanning dark pool (mock)..." + Style.RESET_ALL)
+    print(Fore.GREEN + "[+] Activity: Tor node detected at 192.168.1.99" + Style.RESET_ALL)
+    log_event("Dark pool scan performed")
+
+def product_key_generator(session):
+    if session["role"] != "admin":
+        print(Fore.RED + "[-] Admin NEONKEY required!" + Style.RESET_ALL)
+        log_event("Product key generation attempted by non-admin")
+        return
+    print(Fore.MAGENTA + "[*] Generating product key..." + Style.RESET_ALL)
+    key = f"xAI-KEY-{random.randint(1000, 9999)}-{random.randint(1000, 9999)}"
+    key_hash = hashlib.sha256(key.encode()).hexdigest()
+    with open(os.path.join(CONFIG_DIR, "keys.json"), "r") as f:
+        keys_data = json.load(f)
+    keys_data["keys"].append({"id": str(uuid.uuid4()), "key": key_hash, "role": "public"})
+    with open(os.path.join(CONFIG_DIR, "keys.json"), "w") as f:
+        json.dump(keys_data, f, indent=4)
+    print(Fore.GREEN + f"[+] Generated key: {key}" + Style.RESET_ALL)
+    log_event(f"Generated product key: {key[:8]}...")
+
 # -------------------- HELP MENU --------------------
 def help_menu():
-    print(Fore.CYAN + "\n[ HUTNTER HELP MENU ]" + Style.RESET_ALL)
-    print("""
-1. Ping a Host                - Sends ICMP packets to check if the host is up.
-2. Port Scanner              - Scans common ports to see which are open.
-3. Get IP                    - Resolves a domain name to its IP address.
-4. HTTP Headers              - Displays server response headers for a URL.
-5. Reverse IP Lookup         - Finds domains sharing the same IP (mocked).
-6. DNS Lookup                - Performs a DNS query to get records for a domain.
-7. Traceroute                - Shows the route packets take to a target.
-8. Whois Lookup              - Shows WHOIS registration info for a domain.
-9. Extended Port Scan        - Scans a larger range of ports (1-1000).
-10. Packet Sniffer           - Captures network packets (requires scapy).
-11. ARP Spoof Detector       - Detects potential ARP spoofing attacks.
-12. MAC Address Lookup       - Finds MAC address for an IP (requires scapy).
-13. Bandwidth Monitor        - Monitors network bandwidth usage.
-14. SSL Certificate Check    - Retrieves SSL certificate details.
-15. DNS Enumeration          - Enumerates DNS records (A, MX, NS, etc.).
-16. Network Interfaces       - Lists network interfaces and their IPs.
-17. File Integrity Check     - Calculates SHA256 hash of a file.
-18. Vulnerability Scan       - Performs a basic vulnerability scan (mock).
-19. Packet Injection Test    - Sends test ICMP packet (requires scapy).
-20. Password Strength Check  - Evaluates password strength.
-21. Network Traffic Analysis - Analyzes network traffic (mock).
-22. Firewall Rule Check      - Checks firewall rules (mock).
-23. OS Fingerprinting        - Attempts OS detection (mock).
-24. Banner Grabbing          - Retrieves service banners from open ports.
-25. Subnet Calculator        - Calculates subnet details from IP and mask.
-26. GeoIP Lookup             - Finds geographic location of an IP.
-27. HTTP Method Test         - Tests supported HTTP methods on a URL.
-28. DNS Zone Transfer        - Attempts DNS zone transfer.
-29. Network Latency Test     - Measures network latency to a target.
-30. Protocol Analyzer        - Analyzes network protocols (mock).
-31. Log File Analyzer        - Analyzes Hutnter's log file.
-32. User Sign-Up             - Register a new user.
-33. Ethical Dilemma Analyzer - Analyzes ethical implications of network actions.
-34. Decision-Making Framework - Evaluates actions based on ethical criteria.
-35. Principles Manager       - Manages ethical principles.
-36. Compliance Checker       - Checks compliance with standards like GDPR.
-37. Scenario Generator       - Generates ethical scenarios for analysis.
-38. Decision Tree Builder    - Builds decision trees for actions.
-39. Automated Backup         - Backs up configuration files.
-40. Multi-Language Support   - Translates messages to different languages.
-41. Report Generator         - Generates summary or detailed reports.
-42. Exit                     - Exits the tool.
-h or help                    - Shows this help menu.
+    print(Fore.YELLOW + "\n===== NEON MATRIX KEYS =====" + Style.RESET_ALL)
+    print(Fore.CYAN + """
+[NETWORK]
+1. Ping Host                - Test connectivity
+2. Port Scanner             - Scan common ports
+3. Get IP                  - Resolve hostname
+4. HTTP Headers           - Fetch headers
+5. Reverse IP                - IP domain lookup (mock)
+6. DNS Lookup               - DNS records
+7. Traceroute              - Packet route
+8. WHOIS                    - Domain info
+9. Extended Port Scan      - Ports 1–1000
+10. Packet Sniffer         - Capture packets (scapy)
+11. ARP Spoofing          - Detect ARP spoofing
+12. MAC Lookup             - Find MAC address
+13. Bandwidth Monitor      - Track usage
+14. SSL Certificate        - Check SSL certs
+15. DNS Enumeration        - DNS record types
+16. Network Interfaces      - List adapters
+17. File Integrity         - SHA256 hash
+18. Vulnerability Scan      - Basic vuln check (mock)
+19. Packet Injection       - Test packet (scapy)
+20. Password Strength      - Evaluate password
+21. Traffic Analysis      - Analyze traffic (mock)
+22. Firewall Rules         - Check firewall (mock)
+23. OS Fingerprint         - Detect OS (mock)
+24. Banner Grab            - Service banners
+25. Subnet Calculator      - Subnet details
+26. GeoIP Lookup           - IP geolocation
+27. HTTP Methods           - Test HTTP methods
+28. DNS Zone Transfer      - Zone transfer
+29. Network Latency       - Measure latency
+30. Protocol Analysis          - Protocols (mock)
+31. Log Analyzer           - Review logs
+32. Web Crawler             - Extract links
+33. SQL Injection          - Test SQLi (mock)
+34. Wi-Fi Scanner           - List Wi-Fi
+35. Packet Crafter         - Custom packets
+36. Topology Mapper      - Network map (mock)
+37. Brute Force           - Login test (mock)
+38. Firewall Bypass        - Test bypass (mock)
+39. Packet Analyzer       - Detailed packet info
+40. VPN Detection           - Detect VPN (mock)
+41. Cloud Enumeration         - Cloud services (mock)
+42. Port Knocking         - Simulate knocking
+43. Intrusion Detection    - Monitor traffic (mock)
+44. IP Spoofing           - Test spoofing (admin)
+45. SSL/TLS Scanner        - TLS versions
+46. DNS Poisoning        - Test poisoning (mock)
+47. Network Congestion     - Analyze bottlenecks (mock)
+48. IoT Scanner          - Detect IoT (mock)
 
-Admin Dashboard:
-- Run `dashboard.py` to start the admin dashboard.
-- Access at http://localhost:5000
-- Login with username: Ethan, password: Admin
-- Features: User management, DDoS whitelist, system metrics, exclusive tools
-""")
+[ETHICAL]
+49. Ethical Dilemma        - Analyze ethics
+50. Decision Framework   - Evaluate actions
+51. Principles Manager     - Manage principles
+52. Compliance Check       - Verify standards
+53. Scenario Generator     - Ethical scenarios
+54. Decision Tree        - Build trees
+55. Risk Assessment        - Assess risks
+56. Ethics Report           - Generate report
+57. Stakeholder Analysis   - Impact analysis
+58. Privacy Impact       - Data privacy
+59. Ethical AI           - AI ethics
+60. Social Engineering    - Phishing scenarios
+61. Bias Detection        - Detect biases
+62. Ethical Audit      - Audit trail
+
+[UTILITY]
+63. Auto Backup            - Backup config
+64. Multi-Language          - Translate
+65. Report Generator       - Log reports
+66. File Encryptor         - AES-256 encryption
+67. System Monitor        - CPU, memory
+68. API Scanner           - Test APIs (mock)
+69. File Decryptor        - AES decryption
+70. Network Speed         - Speed test
+71. Dark Pool            - Scan dark pool (mock)
+72. Password Generator    - Random passwords
+73. Log Cleaner                  - Clear logs
+74. Product Key Gen           - Generate keys (admin)
+75. User Sign-Up           - Deprecated, use key gen
+
+[CONTROL]
+76. Disconnect          - Exit CLI
+h. Matrix Index         - Show this
+
+Admin Tools:
+- Run `dashboard.py` for admin controls
+- URL: http://localhost:5000
+- Features: User management, DDoS whitelist, metrics, admin stress test
+- Admin key: xAI-ADMIN-NEON-2025
+""" + Style.RESET_ALL)
 
 # -------------------- MENU --------------------
-def menu():
+def menu(session):
     while True:
-        print(Fore.CYAN + "\n[ MENU ]" + Style.RESET_ALL)
-        print("1. Ping a Host")
-        print("2. Port Scanner (Common Ports)")
-        print("3. Get IP from Hostname")
-        print("4. View HTTP Headers")
-        print("5. Reverse IP Lookup")
-        print("6. DNS Lookup")
-        print("7. Traceroute")
-        print("8. Whois Lookup")
-        print("9. Extended Port Scan")
-        print("10. Packet Sniffer")
-        print("11. ARP Spoof Detector")
-        print("12. MAC Address Lookup")
-        print("13. Bandwidth Monitor")
-        print("14. SSL Certificate Check")
-        print("15. DNS Enumeration")
-        print("16. Network Interfaces")
-        print("17. File Integrity Check")
-        print("18. Vulnerability Scan")
-        print("19. Packet Injection Test")
-        print("20. Password Strength Check")
-        print("21. Network Traffic Analysis")
-        print("22. Firewall Rule Check")
-        print("23. OS Fingerprinting")
-        print("24. Banner Grabbing")
-        print("25. Subnet Calculator")
-        print("26. GeoIP Lookup")
-        print("27. HTTP Method Test")
-        print("28. DNS Zone Transfer")
-        print("29. Network Latency Test")
-        print("30. Protocol Analyzer")
-        print("31. Log File Analyzer")
-        print("32. User Sign-Up")
-        print("33. Ethical Dilemma Analyzer")
-        print("34. Decision-Making Framework")
-        print("35. Principles Manager")
-        print("36. Compliance Checker")
-        print("37. Scenario Generator")
-        print("38. Decision Tree Builder")
-        print("39. Automated Backup")
-        print("40. Multi-Language Support")
-        print("41. Report Generator")
-        print("42. Exit")
-        print("h. Help")
+        banner()
+        print(Fore.MAGENTA + f"[NODE: {session['key']}] [ROLE: {session['role'].upper()}]" + Style.RESET_ALL)
+        print(Fore.YELLOW + "\n===== NEON MATRIX COMMANDMENT =====" + Style.RESET_ALL)
+        print(Fore.CYAN + """
+[NETWORK]
+1. Ping Host    2. Port Scan    3. Get IP    4. HTTP Headers    5. Reverse IP
+6. DNS Lookup    7. Traceroute    8. WHOIS    9. Extended Scan    10. Hosts
+11. ARP Spoof    12. MAC Lookup    13. Bandwidth    14. SSL Cert    15. DNS Enum
+16. Interfaces    17. File Hash    18. Network    19. Packet Inject    20. Password
+21. Traffic    22. Firewall    23. Encryption    22. OS Fingerprint    24. Banner Grab
+25. Subnet    26. GeoIP    27. HTTP Methods    28. Zone Transfer    29. Network
+30. Latency    31. Protocols    32. Log Analyzer    33. Web Crawler
+34. SQLi Test    35. Wi-Fi Scan    36. Packet Craft    37. Topology
+38. Brute Force    39. Firewall Bypass    40. Packet Analyze
+45. VPN Detect    46. Cloud Enum    47. Port Knock    48. Intrusion
+49. IP Spoof    50. SSL/TLS     51. DNS Poison    52. Congestion    53. IoT Scan
 
-        choice = input(Fore.YELLOW + "\nSelect an option: " + Style.RESET_ALL).strip().lower()
+[ETHICAL]
+54. Ethical Dilemma    55. Decision    53. Principles    54. Compliance
+55. Scenarios    56. Decision Tree    57. Risk Assess    58. Ethics Report
+59. Stakeholders    60. Privacy Impact    61. Ethical AI
+62. Social Eng    63. Bias Detect    64. Audit Trail
 
+[UTILITY]
+65. Backup    66. Language    67. Report    68. Encrypt    69. Monitor
+70. API Scan    71. Decrypt    72. Speed Test    73. Dark Pool
+74. Password Gen    75. Log Clean    76. Key Gen
+
+[CONTROL]
+76. Exit    h. Help
+""" + Style.RESET_ALL)
+        choice = input(Fore.GREEN + "[>] Select: " + Style.RESET_ALL).strip().lower()
         if choice == "1":
             ping_host()
         elif choice == "2":
@@ -765,41 +1165,110 @@ def menu():
         elif choice == "31":
             log_file_analyzer()
         elif choice == "32":
-            user_signup()
+            web_crawler()
         elif choice == "33":
-            ethical_dilemma_analyzer()
+            sql_injection_tester()
         elif choice == "34":
-            decision_making_framework()
+            wifi_scanner()
         elif choice == "35":
-            principles_manager()
+            packet_crafter()
         elif choice == "36":
-            compliance_checker()
+            network_topology_mapper()
         elif choice == "37":
-            scenario_generator()
+            brute_force_tester()
         elif choice == "38":
-            decision_tree_builder()
+            firewall_bypass_test()
         elif choice == "39":
-            automated_backup()
+            advanced_packet_analyzer()
         elif choice == "40":
-            multi_language_support()
+            vpn_detection()
         elif choice == "41":
-            report_generator()
+            cloud_service_enumeration()
         elif choice == "42":
-            print(Fore.CYAN + "[*] Exiting Hutnter." + Style.RESET_ALL)
-            log_event("Hutnter exited")
+            port_knocking_simulator()
+        elif choice == "43":
+            network_intrusion_detection()
+        elif choice == "44":
+            ip_spoofing_test()
+        elif choice == "45":
+            ssl_tls_version_scanner()
+        elif choice == "46":
+            dns_cache_poisoning_test()
+        elif choice == "47":
+            network_congestion_analyzer()
+        elif choice == "48":
+            iot_device_scanner()
+        elif choice == "49":
+            ethical_dilemma_analyzer()
+        elif choice == "50":
+            decision_making_framework()
+        elif choice == "51":
+            principles_manager()
+        elif choice == "52":
+            compliance_checker()
+        elif choice == "53":
+            scenario_generator()
+        elif choice == "54":
+            decision_tree_builder()
+        elif choice == "55":
+            risk_assessment()
+        elif choice == "56":
+            ethics_report_generator()
+        elif choice == "57":
+            stakeholder_analysis()
+        elif choice == "58":
+            privacy_impact_assessment()
+        elif choice == "59":
+            ethical_ai_analysis()
+        elif choice == "60":
+            social_engineering_simulator()
+        elif choice == "61":
+            bias_detection_framework()
+        elif choice == "62":
+            ethical_audit_trail()
+        elif choice == "63":
+            automated_backup()
+        elif choice == "64":
+            multi_language_support()
+        elif choice == "65":
+            report_generator()
+        elif choice == "66":
+            file_encryptor()
+        elif choice == "67":
+            system_monitor()
+        elif choice == "68":
+            api_scanner()
+        elif choice == "69":
+            file_decrypt()
+        elif choice == "70":
+            network_speed_test()
+        elif choice == "71":
+            dark_pool()
+        elif choice == "72":
+            password_generator()
+        elif choice == "73":
+            log_cleaner()
+        elif choice == "74":
+            product_key_generator(session)
+        elif choice == "75":
+            user_signup()
+        elif choice == "76":
+            print(Fore.RED + "[!] Disconnecting from NEON MATRIX..." + Style.RESET_ALL)
+            log_event(f"{session['role']} key {session['key']} disconnected")
             break
         elif choice in ["h", "help"]:
             help_menu()
         else:
-            print(Fore.RED + "Invalid option. Try again." + Style.RESET_ALL)
-            log_event("Invalid menu option selected")
+            print(Fore.RED + "[?] Invalid command. Check matrix index (h)." + Style.RESET_ALL)
+            log_event("Invalid command selected")
+        input(Fore.CYAN + "[>] Press Enter to continue..." + Style.RESET_ALL)
 
 # -------------------- RUN --------------------
 if __name__ == "__main__":
     try:
-        banner()
-        menu()
+        session = product_key_auth()
+        menu(session)
     except KeyboardInterrupt:
-        print(Fore.RED + "\n[!] Interrupted by user." + Style.RESET_ALL)
-        log_event("Hutnter interrupted by user")
-        sys.exit(0)
+        print(Fore.RED + "\n[!] Matrix interrupted by user." + Style.RESET_ALL)
+        log_event("EasyHex interrupted")
+        sys.exit(1)
