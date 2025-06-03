@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Theme Customizer</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .theme-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+        }
+        .theme-preview {
+            width: 100px;
+            height: 60px;
+            background: linear-gradient(45deg, #555, #888);
+            border-radius: 4px;
+            margin-right: 15px;
+        }
+        .apply-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Linux Theme Customizer</h1>
+    <p>Easily change your desktop appearance with one click.</p>
+
+    <div class="theme-card">
+        <div class="theme-preview" style="background: linear-gradient(45deg, #2d3436, #636e72);"></div>
+        <div>
+            <h3>Dark Theme</h3>
+            <p>Elegant dark mode for better night-time usage.</p>
+            <button class="apply-btn" onclick="applyTheme('dark')">Apply</button>
+        </div>
+    </div>
+
+    <div class="theme-card">
+        <div class="theme-preview" style="background: linear-gradient(45deg, #f5f6fa, #dcdde1);"></div>
+        <div>
+            <h3>Light Theme</h3>
+            <p>Clean and bright for daytime work.</p>
+            <button class="apply-btn" onclick="applyTheme('light')">Apply</button>
+        </div>
+    </div>
+
+    <div class="theme-card">
+        <div class="theme-preview" style="background: linear-gradient(45deg, #192a56, #273c75);"></div>
+        <div>
+            <h3>Blue Theme</h3>
+            <p>A calming blue color scheme.</p>
+            <button class="apply-btn" onclick="applyTheme('blue')">Apply</button>
+        </div>
+    </div>
+
+    <script>
+        function applyTheme(theme) {
+            alert(`Applying ${theme} theme... (In a real app, this would call the Python backend)`);
+        }
+    </script>
+</body>
+</html>
