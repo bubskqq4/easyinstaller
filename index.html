@@ -1,0 +1,115 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyInstaller - Kali Linux App Installer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai-sublime.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        body { background-color: #1C2526; color: #FFFFFF; font-family: 'DejaVu Sans Mono', 'Courier New', monospace; }
+        .neon-blue { color: #0055A4; }
+        .neon-green { color: #00FF00; }
+        .btn-neon { background-color: #0055A4; transition: all 0.3s; }
+        .btn-neon:hover { background-color: #003366; transform: scale(1.05); }
+        nav a { transition: color 0.3s; }
+        nav a:hover { color: #00FF00; }
+        pre { background-color: #2E3B3E; border-radius: 8px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <nav class="bg-[#2E3B3E] p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl neon-green font-bold">EasyInstaller</h1>
+            <div class="space-x-4">
+                <a href="index.html" class="neon-blue hover:neon-green">Home</a>
+                <a href="easyinstaller.html" class="neon-blue hover:neon-green">EasyInstaller</a>
+                <a href="https://github.com/yourusername/easyinstaller" class="neon-blue hover:neon-green" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+    <header class="container mx-auto text-center py-12 flex-grow">
+        <h1 class="text-5xl neon-green font-bold mb-4">EasyInstaller</h1>
+        <p class="text-xl neon-blue mb-6">A Kali Linux-inspired app installer for all Linux package formats.</p>
+        <a href="easyinstaller.html" class="btn-neon text-white px-6 py-3 rounded-lg shadow-lg inline-block">Get Started</a>
+    </header>
+    <section class="container mx-auto py-12">
+        <h2 class="text-3xl neon-blue font-bold mb-6 text-center">Features</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-[#2E3B3E] p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl neon-green mb-2">Multi-Format Support</h3>
+                <p>Install .deb, .snap, .AppImage, .flatpak, .rpm, .tar.gz, .tar.xz, .tgz, .run, and .sh files.</p>
+            </div>
+            <div class="bg-[#2E3B3E] p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl neon-green mb-2">URL Downloads</h3>
+                <p>Download packages directly from URLs with wget.</p>
+            </div>
+            <div class="bg-[#2E3B3E] p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl neon-green mb-2">Kali Aesthetic</h3>
+                <p>Dark theme with neon accents for a hacker vibe.</p>
+            </div>
+            <div class="bg-[#2E3B3E] p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl neon-green mb-2">App Tracking</h3>
+                <p>Track installed apps in a system group and file.</p>
+            </div>
+        </div>
+    </section>
+    <section class="container mx-auto py-12">
+        <h2 class="text-3xl neon-blue font-bold mb-6 text-center">Code Preview</h2>
+        <pre><code class="language-python">
+import tkinter as tk
+from tkinter import filedialog, messagebox
+# ... (partial code for brevity)
+class KaliAppInstaller:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Kali App Installer")
+        self.root.configure(bg='#1C2526')  # Kali dark background
+        </code></pre>
+    </section>
+    <footer class="bg-[#2E3B3E] p-4 text-center">
+        <p class="neon-blue">&copy; 2025 EasyInstaller. Hosted on <a href="https://github.com/yourusername/easyinstaller" class="neon-green" target="_blank">GitHub</a>.</p>
+    </footer>
+</body>
+</html>

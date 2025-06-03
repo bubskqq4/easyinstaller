@@ -1,0 +1,100 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyInstaller - Download</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai-sublime.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        body { background-color: #1C2526; color: #FFFFFF; font-family: 'DejaVu Sans Mono', 'Courier New', monospace; }
+        .neon-blue { color: #0055A4; }
+        .neon-green { color: #00FF00; }
+        .btn-neon { background-color: #0055A4; transition: all 0.3s; }
+        .btn-neon:hover { background-color: #003366; transform: scale(1.05); }
+        nav a { transition: color 0.3s; }
+        nav a:hover { color: #00FF00; }
+        pre { background-color: #2E3B3E; border-radius: 8px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <nav class="bg-[#2E3B3E] p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl neon-green font-bold">EasyInstaller</h1>
+            <div class="space-x-4">
+                <a href="index.html" class="neon-blue hover:neon-green">Home</a>
+                <a href="easyinstaller.html" class="neon-blue hover:neon-green">EasyInstaller</a>
+                <a href="https://github.com/yourusername/easyinstaller" class="neon-blue hover:neon-green" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+    <section class="container mx-auto py-12 flex-grow">
+        <h1 class="text-4xl neon-green font-bold mb-6 text-center">Download EasyInstaller</h1>
+        <p class="text-xl neon-blue mb-6 text-center">Install apps on Kali Linux with ease. Supports multiple formats and URL downloads.</p>
+        <div class="text-center mb-12">
+            <a href="https://raw.githubusercontent.com/bubskqq4/easyinstaller/main/easyinstaller.py" download class="btn-neon text-white px-6 py-3 rounded-lg shadow-lg inline-block">Download easyinstaller.py</a>
+        </div>
+        <h2 class="text-3xl neon-blue font-bold mb-4">Installation Instructions</h2>
+        <pre><code class="language-bash">
+# Install dependencies
+sudo apt update
+sudo apt install -y python3-tk wget snapd flatpak alien tar bash
+
+# Download and run
+wget https://raw.githubusercontent.com/bubskqq/easyinstaller/main/easyinstaller.py
+python easyinstaller.py
+        </code></pre>
+        <h2 class="text-3xl neon-blue font-bold mt-8 mb-4">Usage</h2>
+        <ul class="list-disc list-inside neon-blue">
+            <li>Enter a URL to a .deb, .snap, .AppImage, .flatpak, .rpm, .tar.gz, .tar.xz, .tgz, .run, or .sh file, or select a local file.</li>
+            <li>Use product key: <span class="neon-green">free</span>.</li>
+            <li>Enter the app command (e.g., <span class="neon-green">vlc</span> for VLC). Optional for .AppImage, .run, .sh.</li>
+            <li>Click "Install & Launch" to install and run the app.</li>
+        </ul>
+    </section>
+    <footer class="bg-[#2E3B3E] p-4 text-center">
+        <p class="neon-blue">&copy; 2025 EasyInstaller. Hosted on <a href="https://github.com/bubskqq/easyinstaller" class="neon-green" target="_blank">GitHub</a>.</p>
+    </footer>
+</body>
+</html>
