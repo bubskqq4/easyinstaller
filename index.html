@@ -1,4 +1,14 @@
-<script type="text/javascript">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>linux overload - Make The System Yours</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai-sublime.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <script type="text/javascript">
         var gk_isXlsx = false;
         var gk_xlsxFileLookup = {};
         var gk_fileData = {};
@@ -6,47 +16,33 @@
           return cell !== '' && cell != null;
         }
         function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
 
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
 
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
                 }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
             }
+            return gk_fileData[filename] || "";
         }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyInstaller - Kali Linux App Installer</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai-sublime.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-    <script>hljs.highlightAll();</script>
+    </script>
     <style>
         body { background-color: #1C2526; color: #FFFFFF; font-family: 'DejaVu Sans Mono', 'Courier New', monospace; }
         .neon-blue { color: #0055A4; }
@@ -59,21 +55,28 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
+
+    <!-- Navbar with Linux Customize tab first -->
     <nav class="bg-[#2E3B3E] p-4 shadow-lg">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-2xl neon-green font-bold">EasyInstaller</h1>
             <div class="space-x-4">
+                <a href="linuxcustomize.html" class="neon-blue hover:neon-green">Linux Customize</a>
                 <a href="index.html" class="neon-blue hover:neon-green">Home</a>
                 <a href="easyinstaller.html" class="neon-blue hover:neon-green">EasyInstaller</a>
                 <a href="https://github.com/yourusername/easyinstaller" class="neon-blue hover:neon-green" target="_blank">GitHub</a>
             </div>
         </div>
     </nav>
+
+    <!-- Main header -->
     <header class="container mx-auto text-center py-12 flex-grow">
         <h1 class="text-5xl neon-green font-bold mb-4">EasyInstaller</h1>
         <p class="text-xl neon-blue mb-6">A Kali Linux-inspired app installer for all Linux package formats.</p>
         <a href="easyinstaller.html" class="btn-neon text-white px-6 py-3 rounded-lg shadow-lg inline-block">Get Started</a>
     </header>
+
+    <!-- Features section -->
     <section class="container mx-auto py-12">
         <h2 class="text-3xl neon-blue font-bold mb-6 text-center">Features</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -95,6 +98,8 @@
             </div>
         </div>
     </section>
+
+    <!-- Code preview section -->
     <section class="container mx-auto py-12">
         <h2 class="text-3xl neon-blue font-bold mb-6 text-center">Code Preview</h2>
         <pre><code class="language-python">
@@ -108,8 +113,11 @@ class KaliAppInstaller:
         self.root.configure(bg='#1C2526')  # Kali dark background
         </code></pre>
     </section>
+
+    <!-- Footer -->
     <footer class="bg-[#2E3B3E] p-4 text-center">
         <p class="neon-blue">&copy; 2025 EasyInstaller. Hosted on <a href="https://github.com/yourusername/easyinstaller" class="neon-green" target="_blank">GitHub</a>.</p>
     </footer>
+
 </body>
 </html>
