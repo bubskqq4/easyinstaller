@@ -12,6 +12,12 @@ from colorama import Fore, Style, init
 
 init()
 
+# -------------------- SETUP --------------------
+# Create config folder if it doesn't exist
+if not os.path.exists("config"):
+    os.makedirs("config")
+    print(Fore.GREEN + "[+] Created config folder." + Style.RESET_ALL)
+
 # -------------------- LEGAL NOTICE --------------------
 LEGAL = """
 ================== LEGAL NOTICE ==================
@@ -69,7 +75,7 @@ def get_ip():
         print(Fore.RED + "[-] Invalid hostname." + Style.RESET_ALL)
 
 def http_headers():
-    url = input(Fore.YELLOW + "[?] Enter full URL (http://...): " + Style.RESET_ALL)
+    url = input(Fore.YELLOW + "[?] Enter full URL[](http://...): " + Style.RESET_ALL)
     try:
         r = requests.get(url)
         print(Fore.CYAN + "[~] HTTP Headers:" + Style.RESET_ALL)
@@ -83,7 +89,7 @@ def reverse_ip():
     try:
         ip = socket.gethostbyname(domain)
         print(Fore.GREEN + f"[+] IP: {ip}" + Style.RESET_ALL)
-        # Fake API placeholder (real service needed for live results)
+        # Placeholder for reverse IP lookup (requires external API for real results)
         print(Fore.CYAN + "[~] Domains hosted on this IP (mock):" + Style.RESET_ALL)
         print("example.com\nsub.example.com")
     except:
@@ -174,42 +180,12 @@ def menu():
         else:
             print(Fore.RED + "Invalid option. Try again." + Style.RESET_ALL)
 
-# -------------------- CLI MODE --------------------
-
-def run_cli_mode():
-    try:
-        from tools.crash import CriticalError
-        import tools.addons.clean
-        import tools.addons.logo
-        import tools.addons.winpcap
-        from tools.method import AttackMethod
-    except ImportError as err:
-        print(Fore.RED + "[!] CLI Mode: Failed to import attack modules." + Style.RESET_ALL)
-        sys.exit(1)
-
-    parser = argparse.ArgumentParser(description="Denial-of-service ToolKit")
-    parser.add_argument("--target", type=str, metavar="<IP:PORT, URL, PHONE>", help="Target ip:port, url or phone")
-    parser.add_argument("--method", type=str, metavar="<SMS/EMAIL/NTP/UDP/SYN/ICMP/POD/SLOWLORIS/MEMCACHED/HTTP>", help="Attack method")
-    parser.add_argument("--time", type=int, default=10, help="Attack time in seconds")
-    parser.add_argument("--threads", type=int, default=3, help="Thread count (1-200)")
-    args = parser.parse_args()
-
-    if not args.method or not args.target:
-        parser.print_help()
-        sys.exit(1)
-
-    with AttackMethod(duration=args.time, name=args.method.upper(), threads=args.threads, target=args.target) as Flood:
-        Flood.Start()
-
 # -------------------- RUN --------------------
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        run_cli_mode()
-    else:
-        try:
-            banner()
-            menu()
-        except KeyboardInterrupt:
-            print(Fore.RED + "\n[!] Interrupted by user." + Style.RESET_ALL)
-            sys.exit(0)
+    try:
+        banner()
+        menu()
+    except KeyboardInterrupt:
+        print(Fore.RED + "\n[!] Interrupted by user." + Style.RESET_ALL)
+        sys.exit(0)
