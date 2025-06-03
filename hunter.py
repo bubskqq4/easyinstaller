@@ -13,7 +13,6 @@ import threading
 import queue
 import datetime
 import hashlib
-import base64
 import getpass
 import ssl
 import urllib.parse
@@ -23,16 +22,19 @@ import xml.etree.ElementTree as ET
 import dns.resolver
 import psutil
 import netifaces
+import ipaddress
+import uuid
+import random
 
 init()
 
 # -------------------- SETUP --------------------
-# Create config folder and configuration files
 CONFIG_DIR = "config"
 CONFIG_FILES = {
     "ports.json": {"common_ports": [21, 22, 23, 25, 53, 80, 443, 8080], "extended_ports": list(range(1, 1001))},
-    "settings.json": {"timeout": 0.5, "max_threads": 50, "log_file": "hutnter.log"},
-    "whitelist.json": {"allowed_ips": []}
+    "settings.json": {"timeout": 0.5, "max_threads": 50, "log_file": "hutnter.log", "ddos_threshold": 100},
+    "whitelist.json": {"allowed_ips": []},
+    "users.json": {"users": [{"id": str(uuid.uuid4()), "username": "Ethan", "password": hashlib.sha256("Admin".encode()).hexdigest(), "role": "admin"}]}
 }
 
 if not os.path.exists(CONFIG_DIR):
@@ -50,6 +52,10 @@ with open(os.path.join(CONFIG_DIR, "ports.json"), "r") as f:
     PORTS_CONFIG = json.load(f)
 with open(os.path.join(CONFIG_DIR, "settings.json"), "r") as f:
     SETTINGS = json.load(f)
+with open(os.path.join(CONFIG_DIR, "users.json"), "r") as f:
+    USERS = json.load(f)
+with open(os.path.join(CONFIG_DIR, "whitelist.json"), "r") as f:
+    WHITELIST = json.load(f)
 
 # -------------------- LEGAL NOTICE --------------------
 LEGAL = """
@@ -65,7 +71,6 @@ Users must comply with all applicable laws and regulations.
 """
 
 # -------------------- HEADER --------------------
-
 def banner():
     os.system("cls" if platform.system() == "Windows" else "clear")
     print(Fore.GREEN + r"""
@@ -85,8 +90,7 @@ def log_event(message):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         f.write(f"[{timestamp}] {message}\n")
 
-# -------------------- TOOLS --------------------
-
+# -------------------- NETWORK TOOLS --------------------
 def ping_host():
     target = input(Fore.YELLOW + "[?] Enter host/IP to ping: " + Style.RESET_ALL)
     response = os.system(f"ping -c 4 {target}" if platform.system() != "Windows" else f"ping {target}")
@@ -139,7 +143,7 @@ def get_ip():
         log_event(f"Failed to resolve {hostname}")
 
 def http_headers():
-    url = input(Fore.YELLOW + "[?] Enter full URL[](http://...): " + Style.RESET_ALL)
+    url = input(Fore.YELLOW + "[?] Enter full URL (http://...): " + Style.RESET_ALL)
     try:
         r = requests.get(url)
         print(Fore.CYAN + "[~] HTTP Headers:" + Style.RESET_ALL)
@@ -251,7 +255,7 @@ def bandwidth_monitor():
         log_event("Bandwidth monitor failed: psutil not installed")
 
 def ssl_certificate_check():
-    url = input(Fore.YELLOW + "[?] Enter URL[](https://...): " + Style.RESET_ALL)
+    url = input(Fore.YELLOW + "[?] Enter URL (https://...): " + Style.RESET_ALL)
     try:
         hostname = urllib.parse.urlparse(url).hostname
         context = ssl.create_default_context()
@@ -300,7 +304,6 @@ def file_integrity_check():
 def vulnerability_scan():
     target = input(Fore.YELLOW + "[?] Enter target IP for vulnerability scan: " + Style.RESET_ALL)
     print(Fore.CYAN + "[~] Performing basic vulnerability scan (mock)..." + Style.RESET_ALL)
-    # Mock vulnerabilities for demonstration
     vulnerabilities = ["Open port 23 (Telnet)", "Weak SSL version detected"]
     for vuln in vulnerabilities:
         print(Fore.RED + f"[!] {vuln}" + Style.RESET_ALL)
@@ -338,7 +341,6 @@ def password_strength_checker():
 
 def network_traffic_analysis():
     print(Fore.CYAN + "[~] Analyzing network traffic (mock)..." + Style.RESET_ALL)
-    # Mock traffic analysis
     print(Fore.GREEN + "[+] Detected protocols: TCP, UDP, ICMP" + Style.RESET_ALL)
     log_event("Network traffic analysis performed")
 
@@ -457,6 +459,145 @@ def log_file_analyzer():
         print(Fore.RED + "[-] Log file not found." + Style.RESET_ALL)
         log_event("Log file analysis failed")
 
+# -------------------- ETHICAL TOOLS --------------------
+def ethical_dilemma_analyzer():
+    print(Fore.CYAN + "[~] Ethical Dilemma Analyzer" + Style.RESET_ALL)
+    action = input(Fore.YELLOW + "[?] Describe the network action (e.g., port scanning, packet sniffing): " + Style.RESET_ALL)
+    target = input(Fore.YELLOW + "[?] Target (e.g., IP, domain): " + Style.RESET_ALL)
+    permission = input(Fore.YELLOW + "[?] Do you have explicit permission? (yes/no): " + Style.RESET_ALL).lower()
+    result = "Ethical" if permission == "yes" else "Unethical: Requires explicit permission"
+    print(Fore.GREEN + f"[+] Analysis: {result}" + Style.RESET_ALL)
+    log_event(f"Ethical dilemma analysis: {action} on {target} -> {result}")
+
+def decision_making_framework():
+    print(Fore.CYAN + "[~] Decision-Making Framework" + Style.RESET_ALL)
+    action = input(Fore.YELLOW + "[?] Action to evaluate: " + Style.RESET_ALL)
+    criteria = ["Legality", "Consent", "Impact", "Necessity"]
+    scores = {}
+    for criterion in criteria:
+        score = int(input(Fore.YELLOW + f"[?] Score for {criterion} (1-5): " + Style.RESET_ALL))
+        scores[criterion] = score
+    avg_score = sum(scores.values()) / len(scores)
+    result = "Proceed" if avg_score >= 3 else "Reconsider"
+    print(Fore.GREEN + f"[+] Decision: {result} (Average Score: {avg_score:.2f})" + Style.RESET_ALL)
+    log_event(f"Decision-making framework: {action} -> {result}")
+
+def principles_manager():
+    print(Fore.CYAN + "[~] Ethical Principles Manager" + Style.RESET_ALL)
+    principles = ["Respect for autonomy", "Non-maleficence", "Beneficence", "Justice"]
+    print(Fore.GREEN + "[+] Current principles: " + ", ".join(principles) + Style.RESET_ALL)
+    new_principle = input(Fore.YELLOW + "[?] Add a new principle (or press Enter to skip): " + Style.RESET_ALL)
+    if new_principle:
+        principles.append(new_principle)
+        print(Fore.GREEN + f"[+] Added: {new_principle}" + Style.RESET_ALL)
+        log_event(f"Added ethical principle: {new_principle}")
+
+def compliance_checker():
+    print(Fore.CYAN + "[~] Compliance Checker" + Style.RESET_ALL)
+    action = input(Fore.YELLOW + "[?] Action to check (e.g., port scanning): " + Style.RESET_ALL)
+    standards = ["GDPR", "HIPAA", "PCI-DSS"]
+    results = []
+    for standard in standards:
+        compliant = input(Fore.YELLOW + f"[?] Compliant with {standard}? (yes/no): " + Style.RESET_ALL).lower()
+        results.append(f"{standard}: {'Compliant' if compliant == 'yes' else 'Non-compliant'}")
+    print(Fore.GREEN + "[+] Compliance Results: " + "; ".join(results) + Style.RESET_ALL)
+    log_event(f"Compliance check for {action}: {'; '.join(results)}")
+
+def scenario_generator():
+    print(Fore.CYAN + "[~] Ethical Scenario Generator" + Style.RESET_ALL)
+    scenarios = [
+        "Unauthorized port scan on a corporate network",
+        "Packet sniffing on a public Wi-Fi",
+        "Attempting to bypass authentication on a test server"
+    ]
+    scenario = random.choice(scenarios)
+    print(Fore.GREEN + f"[+] Scenario: {scenario}" + Style.RESET_ALL)
+    log_event(f"Generated scenario: {scenario}")
+
+def decision_tree_builder():
+    print(Fore.CYAN + "[~] Decision Tree Builder" + Style.RESET_ALL)
+    action = input(Fore.YELLOW + "[?] Action to analyze: " + Style.RESET_ALL)
+    tree = {"Action": action, "Steps": []}
+    while True:
+        step = input(Fore.YELLOW + "[?] Add decision step (or press Enter to finish): " + Style.RESET_ALL)
+        if not step:
+            break
+        tree["Steps"].append(step)
+    print(Fore.GREEN + f"[+] Decision Tree: {json.dumps(tree, indent=2)}" + Style.RESET_ALL)
+    log_event(f"Built decision tree for {action}")
+
+# -------------------- UTILITY TOOLS --------------------
+def user_signup():
+    print(Fore.CYAN + "[~] User Sign-Up" + Style.RESET_ALL)
+    username = input(Fore.YELLOW + "[?] Enter username: " + Style.RESET_ALL)
+    password = getpass.getpass(Fore.YELLOW + "[?] Enter password: " + Style.RESET_ALL)
+    with open(os.path.join(CONFIG_DIR, "users.json"), "r") as f:
+        users_data = json.load(f)
+    if any(user['username'] == username for user in users_data['users']):
+        print(Fore.RED + "[-] Username already exists." + Style.RESET_ALL)
+        log_event(f"User sign-up failed: {username} already exists")
+    else:
+        user_id = str(uuid.uuid4())
+        users_data['users'].append({"id": user_id, "username": username, "password": hashlib.sha256(password.encode()).hexdigest(), "role": "user"})
+        with open(os.path.join(CONFIG_DIR, "users.json"), "w") as f:
+            json.dump(users_data, f, indent=4)
+        print(Fore.GREEN + "[+] User signed up successfully." + Style.RESET_ALL)
+        log_event(f"User signed up: {username}")
+
+def automated_backup():
+    print(Fore.CYAN + "[~] Performing automated backup..." + Style.RESET_ALL)
+    backup_dir = os.path.join(CONFIG_DIR, "backups")
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    for file_name in CONFIG_FILES.keys():
+        src = os.path.join(CONFIG_DIR, file_name)
+        dst = os.path.join(backup_dir, f"{file_name}.{timestamp}.bak")
+        with open(src, "r") as f:
+            data = f.read()
+        with open(dst, "w") as f:
+            f.write(data)
+        print(Fore.GREEN + f"[+] Backed up {file_name} to {dst}" + Style.RESET_ALL)
+        log_event(f"Backed up {file_name} to {dst}")
+
+def multi_language_support():
+    print(Fore.CYAN + "[~] Multi-Language Support" + Style.RESET_ALL)
+    languages = {"en": "English", "es": "Spanish", "fr": "French"}
+    lang = input(Fore.YELLOW + f"[?] Select language ({', '.join(languages.values())}): " + Style.RESET_ALL).lower()
+    lang_code = next((code for code, name in languages.items() if name.lower() == lang), "en")
+    try:
+        from translate import Translator
+        translator = Translator(to_lang=lang_code)
+        message = translator.translate("Network scan completed")
+        print(Fore.GREEN + f"[+] Translated: {message}" + Style.RESET_ALL)
+        log_event(f"Translated message to {lang_code}")
+    except:
+        print(Fore.RED + "[-] Install `python-translate` module to use this feature." + Style.RESET_ALL)
+        log_event("Multi-language support failed: python-translate not installed")
+
+def report_generator():
+    print(Fore.CYAN + "[~] Report Generator" + Style.RESET_ALL)
+    report_type = input(Fore.YELLOW + "[?] Report type (summary/detailed): " + Style.RESET_ALL).lower()
+    try:
+        with open(os.path.join(CONFIG_DIR, SETTINGS["log_file"]), "r") as f:
+            logs = f.readlines()
+        report_file = os.path.join(CONFIG_DIR, f"report_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+        with open(report_file, "w") as f:
+            f.write("Hutnter Report\n")
+            f.write(f"Generated: {datetime.datetime.now()}\n")
+            f.write(f"Type: {report_type}\n\n")
+            if report_type == "summary":
+                f.write(f"Total Logs: {len(logs)}\n")
+            else:
+                for log in logs:
+                    f.write(log)
+        print(Fore.GREEN + f"[+] Report saved to {report_file}" + Style.RESET_ALL)
+        log_event(f"Generated {report_type} report: {report_file}")
+    except:
+        print(Fore.RED + "[-] Report generation failed." + Style.RESET_ALL)
+        log_event("Report generation failed")
+
+# -------------------- HELP MENU --------------------
 def help_menu():
     print(Fore.CYAN + "\n[ HUTNTER HELP MENU ]" + Style.RESET_ALL)
     print("""
@@ -491,12 +632,27 @@ def help_menu():
 29. Network Latency Test     - Measures network latency to a target.
 30. Protocol Analyzer        - Analyzes network protocols (mock).
 31. Log File Analyzer        - Analyzes Hutnter's log file.
-32. Exit                     - Exits the tool.
+32. User Sign-Up             - Register a new user.
+33. Ethical Dilemma Analyzer - Analyzes ethical implications of network actions.
+34. Decision-Making Framework - Evaluates actions based on ethical criteria.
+35. Principles Manager       - Manages ethical principles.
+36. Compliance Checker       - Checks compliance with standards like GDPR.
+37. Scenario Generator       - Generates ethical scenarios for analysis.
+38. Decision Tree Builder    - Builds decision trees for actions.
+39. Automated Backup         - Backs up configuration files.
+40. Multi-Language Support   - Translates messages to different languages.
+41. Report Generator         - Generates summary or detailed reports.
+42. Exit                     - Exits the tool.
 h or help                    - Shows this help menu.
+
+Admin Dashboard:
+- Run `dashboard.py` to start the admin dashboard.
+- Access at http://localhost:5000
+- Login with username: Ethan, password: Admin
+- Features: User management, DDoS whitelist, system metrics, exclusive tools
 """)
 
 # -------------------- MENU --------------------
-
 def menu():
     while True:
         print(Fore.CYAN + "\n[ MENU ]" + Style.RESET_ALL)
@@ -531,7 +687,17 @@ def menu():
         print("29. Network Latency Test")
         print("30. Protocol Analyzer")
         print("31. Log File Analyzer")
-        print("32. Exit")
+        print("32. User Sign-Up")
+        print("33. Ethical Dilemma Analyzer")
+        print("34. Decision-Making Framework")
+        print("35. Principles Manager")
+        print("36. Compliance Checker")
+        print("37. Scenario Generator")
+        print("38. Decision Tree Builder")
+        print("39. Automated Backup")
+        print("40. Multi-Language Support")
+        print("41. Report Generator")
+        print("42. Exit")
         print("h. Help")
 
         choice = input(Fore.YELLOW + "\nSelect an option: " + Style.RESET_ALL).strip().lower()
@@ -599,6 +765,26 @@ def menu():
         elif choice == "31":
             log_file_analyzer()
         elif choice == "32":
+            user_signup()
+        elif choice == "33":
+            ethical_dilemma_analyzer()
+        elif choice == "34":
+            decision_making_framework()
+        elif choice == "35":
+            principles_manager()
+        elif choice == "36":
+            compliance_checker()
+        elif choice == "37":
+            scenario_generator()
+        elif choice == "38":
+            decision_tree_builder()
+        elif choice == "39":
+            automated_backup()
+        elif choice == "40":
+            multi_language_support()
+        elif choice == "41":
+            report_generator()
+        elif choice == "42":
             print(Fore.CYAN + "[*] Exiting Hutnter." + Style.RESET_ALL)
             log_event("Hutnter exited")
             break
@@ -609,7 +795,6 @@ def menu():
             log_event("Invalid menu option selected")
 
 # -------------------- RUN --------------------
-
 if __name__ == "__main__":
     try:
         banner()
