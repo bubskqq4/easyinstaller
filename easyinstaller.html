@@ -65,15 +65,20 @@
             <div class="space-x-4">
                 <a href="index.html" class="neon-blue hover:neon-green">Home</a>
                 <a href="easyinstaller.html" class="neon-blue hover:neon-green">EasyInstaller</a>
-                <a href="https://github.com/yourusername/easyinstaller" class="neon-blue hover:neon-green" target="_blank">GitHub</a>
+                <a href="https://github.com/bubskqq4/easyinstaller" class="neon-blue hover:neon-green" target="_blank">GitHub</a>
             </div>
         </div>
     </nav>
     <section class="container mx-auto py-12 flex-grow">
         <h1 class="text-4xl neon-green font-bold mb-6 text-center">Download EasyInstaller</h1>
         <p class="text-xl neon-blue mb-6 text-center">Install apps on Kali Linux with ease. Supports multiple formats and URL downloads.</p>
-        <div class="text-center mb-12">
-            <a href="https://raw.githubusercontent.com/bubskqq4/easyinstaller/main/easyinstaller.py" download class="btn-neon text-white px-6 py-3 rounded-lg shadow-lg inline-block">Download easyinstaller.py</a>
+        <div class="flex justify-center space-x-4 mb-12">
+            <a href="https://raw.githubusercontent.com/bubskqq4/easyinstaller/main/easyinstaller.py" download class="btn-neon text-white px-6 py-3 rounded-lg shadow-lg inline-block">
+                Direct Install
+            </a>
+            <button onclick="navigator.clipboard.writeText('wget https://raw.githubusercontent.com/bubskqq4/easyinstaller/main/easyinstaller.py && python3 easyinstaller.py')" class="btn-neon text-white px-6 py-3 rounded-lg shadow-lg inline-block">
+                Copy Direct Install Command
+            </button>
         </div>
         <h2 class="text-3xl neon-blue font-bold mb-4">Installation Instructions</h2>
         <pre><code class="language-bash">
@@ -82,8 +87,8 @@ sudo apt update
 sudo apt install -y python3-tk wget snapd flatpak alien tar bash
 
 # Download and run
-wget https://raw.githubusercontent.com/bubskqq/easyinstaller/main/easyinstaller.py
-python easyinstaller.py
+wget https://raw.githubusercontent.com/bubskqq4/easyinstaller/main/easyinstaller.py
+python3 easyinstaller.py
         </code></pre>
         <h2 class="text-3xl neon-blue font-bold mt-8 mb-4">Usage</h2>
         <ul class="list-disc list-inside neon-blue">
@@ -94,7 +99,7 @@ python easyinstaller.py
         </ul>
     </section>
     <footer class="bg-[#2E3B3E] p-4 text-center">
-        <p class="neon-blue">&copy; 2025 EasyInstaller. Hosted on <a href="https://github.com/bubskqq/easyinstaller" class="neon-green" target="_blank">GitHub</a>.</p>
+        <p class="neon-blue">&copy; 2025 EasyInstaller. Hosted on <a href="https://github.com/bubskqq4/easyinstaller" class="neon-green" target="_blank">GitHub</a>.</p>
     </footer>
 </body>
 </html>
